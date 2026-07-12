@@ -512,6 +512,40 @@ a {
   color: var(--text);
 }
 
+/* ------------------- 7b. POR QUE ESTE PROJETO EXISTE ----------------------- */
+
+.why {
+  text-align: center;
+}
+
+.why-inner {
+  max-width: 720px;
+}
+
+.why-quote {
+  margin: 0;
+  padding: 0 1rem;
+  border: none;
+}
+
+.why-quote p {
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--text-strong);
+}
+
+.why-quote p::before {
+  content: "\201C";
+  color: var(--accent);
+}
+
+.why-quote p::after {
+  content: "\201D";
+  color: var(--accent);
+}
+
 /* --------------------------- 8. QUEM SOU EU -------------------------------- */
 
 .about-inner {
