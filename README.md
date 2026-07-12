@@ -1,6 +1,6 @@
 # Concurso Finder
 
-Buscador de concursos públicos privado e por convite. O usuário descreve em linguagem natural o que procura (ex: *"concurso na área de saúde com graduação em enfermagem"*) e o sistema filtra automaticamente apenas os concursos com inscrições abertas que aceitam a formação informada, entregando o resultado dentro do app.
+Buscador de concursos públicos privado e por convite com IA. O usuário descreve em linguagem natural o que procura (ex: *"concurso na área de saúde com graduação em enfermagem"*) e o sistema filtra automaticamente apenas os concursos com inscrições abertas que aceitam a formação informada, entregando o resultado dentro do app.
 
 ## Como funciona
 
