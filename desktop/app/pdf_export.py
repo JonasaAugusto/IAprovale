@@ -1,0 +1,121 @@
+"""PDF export module for Concurso Finder — ENTREGA-01.
+
+`gerar_pdf` is a pure function: it receives a list of concurso dicts and
+an optional query string, builds a formatted PDF using fpdf2, and returns
+the raw bytes.  No filesystem writes happen here — the caller (BuscaTab)
+is responsible for persisting the bytes to APP_DIR/resultados.pdf.
+
+Encoding: `set_doc_option("core_fonts_encoding", "windows-1252")` with
+Helvetica (a PDF core font, zero TTF bundle) covers all PT-BR characters
+(áéíóúâêîôûãõàç and common separators like em-dash U+2014).  No
+output_intent / PDF/A mode is used — that would require bundling an ICC
+profile file which is unnecessary for this app.
+"""
+
+from __future__ import annotations
+
+from datetime import date
+
+from fpdf import FPDF
+
+
+def gerar_pdf(resultados: list[dict], query: str = "") -> bytes:
+    """Gera PDF dos resultados de busca. Retorna bytes prontos para gravar em arquivo.
+
+    Args:
+        resultados: Lista de dicts de concurso no formato do backend.
+        query:      String de busca original do usuário (aparece no cabeçalho).
+
+    Returns:
+        Bytes do PDF gerado (começa com b"%PDF").
+    """
+    pdf = FPDF()
+    # set_doc_option("core_fonts_encoding") was deprecated in fpdf2 2.4.0;
+    # use the property directly instead (avoids DeprecationWarning).
+    pdf.core_fonts_encoding = "windows-1252"
+    pdf.set_margins(15, 15, 15)
+    pdf.add_page()
+
+    # Cabeçalho
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.cell(text="Concurso Finder — Resultados da Busca", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(3)
+
+    if query:
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(text=f"Busca: {query}", new_x="LMARGIN", new_y="NEXT")
+
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(
+        text=f"Gerado em: {date.today().strftime('%d/%m/%Y')}",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
+    pdf.ln(5)
+
+    # Linha divisória cinza
+    pdf.set_draw_color(180, 180, 180)
+    pdf.line(15, pdf.get_y(), 195, pdf.get_y())
+    pdf.ln(5)
+
+    for i, c in enumerate(resultados, 1):
+        titulo = c.get("titulo", "Sem título")
+        cargos_list = c.get("cargos", [])
+        prazo = c.get("datas", {}).get("fim", "não informado")
+        link = c.get("noticia", {}).get("link", "")
+
+        # Início do card: registrar posição para desenhar a borda depois
+        # (fpdf2 não tem borda automática multi-elemento — o padrão é
+        # registrar y0, imprimir o conteúdo, e desenhar um rect ao final).
+        x0 = pdf.get_x()
+        y0 = pdf.get_y()
+
+        # Badge NOVO — retângulo preenchido âmbar (cores do Badge.TLabel do app)
+        if c.get("is_new"):
+            pdf.set_fill_color(255, 193, 7)  # COLOR_BADGE_BG #ffc107
+            pdf.set_text_color(58, 46, 0)  # COLOR_BADGE_FG #3a2e00
+            pdf.set_font("Helvetica", "B", 8)
+            pdf.cell(18, 5, text="NOVO", fill=True, align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_text_color(0, 0, 0)
+            pdf.ln(1)
+
+        # Título
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.multi_cell(0, 6, f"{i}. {titulo}", new_x="LMARGIN", new_y="NEXT")
+
+        # Cargos — truncados em 6 itens para evitar parede de texto
+        if cargos_list:
+            if len(cargos_list) > 6:
+                cargos_display = ", ".join(cargos_list[:6]) + f" (+{len(cargos_list) - 6} outros)"
+            else:
+                cargos_display = ", ".join(cargos_list)
+            pdf.set_text_color(90, 90, 90)
+            pdf.set_font("Helvetica", "", 9)
+            pdf.multi_cell(0, 5, f"Cargo(s): {cargos_display}", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_text_color(0, 0, 0)
+
+        # Prazo
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(
+            text=f"Inscrições até: {prazo}",
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
+
+        # Borda do card (agora que a altura final é conhecida)
+        y1 = pdf.get_y()
+        pdf.set_draw_color(210, 210, 210)
+        pdf.rect(x0, y0 - 1, 180, y1 - y0 + 2, style="D")
+
+        pdf.ln(2)
+
+        # Link como linha secundária/meta abaixo do card
+        if link:
+            pdf.set_font("Helvetica", "", 9)
+            pdf.set_text_color(0, 0, 200)
+            pdf.cell(text=link, new_x="LMARGIN", new_y="NEXT")
+            pdf.set_text_color(0, 0, 0)
+
+        pdf.ln(5)
+
+    return bytes(pdf.output())
