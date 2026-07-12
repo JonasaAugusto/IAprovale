@@ -1,0 +1,15 @@
+.env
+concursos_vistos.json
+log.txt
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# PyInstaller build output
+desktop/build/
+desktop/dist/
+
+# Claude Code / GSD tooling and planning artifacts — internal only, never public
+.claude/
+.planning/
+CLAUDE.md
