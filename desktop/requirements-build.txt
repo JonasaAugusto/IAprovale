@@ -1,0 +1,4 @@
+# Build-only dependencies — not required at runtime inside the .exe
+# Install with: pip install -r requirements-build.txt (inside desktop/.venv)
+pyinstaller==6.21.0
+# pyinstaller-hooks-contrib is installed automatically as a PyInstaller dependency
