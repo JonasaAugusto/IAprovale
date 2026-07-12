@@ -1,0 +1,967 @@
+/* ==========================================================================
+   Concurso Finder — homepage
+   CSS puro, sem framework. Organização:
+     1. Reset e base
+     2. Tokens de tema (claro = verde / escuro = dourado)
+     3. Tipografia e utilitários
+     4. Header
+     5. Botões
+     6. Hero (+ fundo animado)
+     7. Seção "Como funciona"
+     8. Seção "Quem sou eu"
+     9. Footer
+    10. Modais (A grande / B pequeno / C formulário)
+    11. Formulário
+    12. Scroll-reveal
+    13. Acessibilidade e movimento reduzido
+   ========================================================================== */
+
+/* ----------------------------- 1. RESET E BASE ---------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+input,
+textarea {
+  font: inherit;
+}
+
+/* -------------------------- 2. TOKENS DE TEMA ----------------------------- */
+
+:root {
+  /* Tipografia */
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+
+  /* Ritmo / forma */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --container: 1080px;
+
+  /* Transição de troca de tema */
+  --theme-transition: background-color 0.32s ease, color 0.32s ease,
+    border-color 0.32s ease, box-shadow 0.32s ease;
+}
+
+/* --- TEMA CLARO: verde, fresco e profissional --- */
+:root[data-theme="light"] {
+  --bg: #f6fbf8;
+  --bg-elev: #ffffff;
+  --bg-soft: #ecf5ef;
+
+  --text: #3d5147;
+  --text-strong: #10241a;
+  --text-muted: #5c6f64;
+
+  --accent: #1b5e3a;
+  --accent-strong: #154a2e;
+  --accent-bright: #2e7d32;
+  --accent-soft: #43a047;
+
+  --border: rgba(16, 36, 26, 0.12);
+  --border-strong: rgba(16, 36, 26, 0.22);
+
+  --header-bg: rgba(246, 251, 248, 0.82);
+
+  --title-gradient: linear-gradient(115deg, #1b5e3a 20%, #2e7d32 55%, #43a047 90%);
+
+  --btn-primary-bg: linear-gradient(135deg, #1b5e3a, #2e7d32);
+  --btn-primary-bg-hover: linear-gradient(135deg, #175232, #2a722e);
+  --btn-primary-text: #ffffff;
+  --btn-primary-shadow: 0 10px 26px -10px rgba(27, 94, 58, 0.55);
+  --btn-primary-shadow-hover: 0 16px 34px -12px rgba(27, 94, 58, 0.65);
+
+  --card-shadow: 0 8px 30px -14px rgba(16, 36, 26, 0.18);
+  --focus-ring: #2e7d32;
+
+  --blob-1: rgba(67, 160, 71, 0.28);
+  --blob-2: rgba(27, 94, 58, 0.18);
+  --blob-3: rgba(102, 187, 106, 0.22);
+
+  --backdrop: rgba(16, 36, 26, 0.45);
+
+  --input-bg: #ffffff;
+
+  color-scheme: light;
+}
+
+/* --- TEMA ESCURO: dourado, premium e exclusivo --- */
+:root[data-theme="dark"] {
+  --bg: #14110d;
+  --bg-elev: #1c1712;
+  --bg-soft: #211b14;
+
+  --text: #ede4d3;
+  --text-strong: #f5efe4;
+  --text-muted: #c4b499;
+
+  --accent: #bd996c;      /* ouro base — rgb(189, 153, 108) */
+  --accent-strong: #a8865c;
+  --accent-bright: #e9d9b8;
+  --accent-soft: #f3e6c8;
+
+  --border: rgba(233, 217, 184, 0.14);
+  --border-strong: rgba(233, 217, 184, 0.3);
+
+  --header-bg: rgba(20, 17, 13, 0.82);
+
+  --title-gradient: linear-gradient(115deg, #bd996c 15%, #e9d9b8 55%, #f3e6c8 90%);
+
+  --btn-primary-bg: linear-gradient(135deg, #bd996c, #d9bd8e);
+  --btn-primary-bg-hover: linear-gradient(135deg, #cba876, #e9d9b8);
+  --btn-primary-text: #1c1712;
+  --btn-primary-shadow: 0 10px 28px -10px rgba(189, 153, 108, 0.45);
+  --btn-primary-shadow-hover: 0 16px 36px -12px rgba(189, 153, 108, 0.55);
+
+  --card-shadow: 0 10px 34px -16px rgba(0, 0, 0, 0.6);
+  --focus-ring: #e9d9b8;
+
+  --blob-1: rgba(189, 153, 108, 0.18);
+  --blob-2: rgba(233, 217, 184, 0.1);
+  --blob-3: rgba(168, 134, 92, 0.16);
+
+  --backdrop: rgba(8, 6, 4, 0.68);
+
+  --input-bg: #211b14;
+
+  color-scheme: dark;
+}
+
+/* -------------------- 3. TIPOGRAFIA E UTILITÁRIOS ------------------------- */
+
+body {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--text);
+  background-color: var(--bg);
+  transition: var(--theme-transition);
+  -webkit-font-smoothing: antialiased;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  color: var(--text-strong);
+  line-height: 1.15;
+  transition: var(--theme-transition);
+}
+
+strong {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+a {
+  color: var(--accent);
+  transition: var(--theme-transition);
+}
+
+.container {
+  width: min(var(--container), 100% - 2.5rem);
+  margin-inline: auto;
+}
+
+.section {
+  padding-block: clamp(4rem, 9vw, 7rem);
+}
+
+.section-title {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 600;
+  margin-bottom: clamp(1.75rem, 4vw, 2.75rem);
+}
+
+/* ------------------------------- 4. HEADER -------------------------------- */
+
+.site-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  background: var(--header-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  transition: var(--theme-transition);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 0.8rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: var(--text-strong);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  transition: var(--theme-transition);
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  color: var(--text-strong);
+  background: transparent;
+  transition: var(--theme-transition), transform 0.18s ease;
+}
+
+.theme-toggle:hover {
+  border-color: var(--border-strong);
+  transform: rotate(12deg) scale(1.06);
+}
+
+/* No tema claro mostra a lua (ação: escurecer); no escuro, o sol */
+:root[data-theme="light"] .icon-sun {
+  display: none;
+}
+
+:root[data-theme="dark"] .icon-moon {
+  display: none;
+}
+
+/* ------------------------------- 5. BOTÕES -------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.7rem 1.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: var(--theme-transition), transform 0.18s ease;
+  will-change: transform;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-lg {
+  padding: 0.95rem 2.1rem;
+  font-size: 1.05rem;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* Primário — o botão que importa */
+.btn-primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  box-shadow: var(--btn-primary-shadow);
+}
+
+.btn-primary:hover {
+  background: var(--btn-primary-bg-hover);
+  box-shadow: var(--btn-primary-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.btn-primary:hover:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Secundário — contorno discreto */
+.btn-ghost {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--border-strong);
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent);
+  background: var(--bg-soft);
+  transform: translateY(-2px);
+}
+
+/* ------------------------- 6. HERO + FUNDO ANIMADO ------------------------- */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(9rem, 18vw, 13rem) clamp(5rem, 10vw, 8rem);
+  text-align: center;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.9;
+  transition: var(--theme-transition);
+}
+
+.blob-1 {
+  width: 46vw;
+  height: 46vw;
+  min-width: 340px;
+  min-height: 340px;
+  top: -18%;
+  left: -10%;
+  background: radial-gradient(circle, var(--blob-1), transparent 70%);
+  animation: blob-drift 22s ease-in-out infinite alternate;
+}
+
+.blob-2 {
+  width: 38vw;
+  height: 38vw;
+  min-width: 300px;
+  min-height: 300px;
+  top: 8%;
+  right: -12%;
+  background: radial-gradient(circle, var(--blob-2), transparent 70%);
+  animation: blob-drift 28s ease-in-out infinite alternate-reverse;
+}
+
+.blob-3 {
+  width: 30vw;
+  height: 30vw;
+  min-width: 240px;
+  min-height: 240px;
+  bottom: -22%;
+  left: 30%;
+  background: radial-gradient(circle, var(--blob-3), transparent 70%);
+  animation: blob-drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes blob-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(6vw, 4vh, 0) scale(1.12);
+  }
+}
+
+.hero-inner {
+  max-width: 780px;
+}
+
+.hero-badge {
+  display: inline-block;
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elev);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 1.75rem;
+  transition: var(--theme-transition);
+}
+
+.hero-title {
+  font-size: clamp(2.4rem, 6.5vw, 4.2rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin-bottom: 1.4rem;
+}
+
+.hero-title-accent {
+  background: var(--title-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-sub {
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  color: var(--text);
+  max-width: 620px;
+  margin-inline: auto;
+  margin-bottom: 2.5rem;
+}
+
+.hero-sub em {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.hero-note {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* -------------------------- 7. COMO FUNCIONA ------------------------------ */
+
+.how {
+  background: var(--bg-soft);
+  border-block: 1px solid var(--border);
+  transition: var(--theme-transition);
+  text-align: center;
+}
+
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  text-align: left;
+}
+
+.how-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.75rem 1.5rem;
+  box-shadow: var(--card-shadow);
+  transition: var(--theme-transition), transform 0.25s ease;
+}
+
+.how-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+}
+
+.how-step {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.how-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.how-card p {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+/* --------------------------- 8. QUEM SOU EU -------------------------------- */
+
+.about-inner {
+  max-width: 640px;
+  text-align: center;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 110px;
+  height: 110px;
+  margin-inline: auto;
+  margin-bottom: 1.5rem;
+  border-radius: 50%;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  box-shadow: var(--btn-primary-shadow);
+  transition: var(--theme-transition);
+}
+
+.about-title {
+  margin-bottom: 1.25rem;
+}
+
+.about-bio {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+}
+
+.about-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.9rem;
+}
+
+.about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  color: var(--text-strong);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: var(--theme-transition), transform 0.18s ease;
+}
+
+.about-link:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+/* -------------------------------- 9. FOOTER -------------------------------- */
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding-block: 2rem;
+  transition: var(--theme-transition);
+}
+
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.footer-brand {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+/* ------------------------------- 10. MODAIS -------------------------------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: var(--backdrop);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal-backdrop[hidden] {
+  display: none;
+}
+
+.modal-backdrop.is-open {
+  opacity: 1;
+}
+
+.modal {
+  position: relative;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.45);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  max-height: min(86vh, 900px);
+  transform: translateY(14px) scale(0.96);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1), opacity 0.3s ease,
+    var(--theme-transition);
+  outline: none;
+}
+
+.modal-backdrop.is-open .modal {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.modal-large {
+  max-width: 880px;
+}
+
+.modal-medium {
+  max-width: 520px;
+}
+
+.modal-small {
+  max-width: 380px;
+  padding: 2.25rem 1.75rem 1.75rem;
+  text-align: center;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 1.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: clamp(1.4rem, 3vw, 1.8rem);
+}
+
+.modal-body {
+  padding: 1.5rem 1.75rem 1.75rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.modal-lede {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  max-width: 60ch;
+}
+
+.modal-close {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  color: var(--text-strong);
+  flex-shrink: 0;
+  transition: var(--theme-transition), transform 0.18s ease;
+}
+
+.modal-close:hover {
+  border-color: var(--border-strong);
+  transform: scale(1.08);
+}
+
+.modal-small .modal-close {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  width: 32px;
+  height: 32px;
+}
+
+.modal-question {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal-choice {
+  display: flex;
+  justify-content: center;
+  gap: 0.9rem;
+}
+
+.modal-choice .btn {
+  min-width: 110px;
+}
+
+/* Cards técnicos (Modal A) */
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.1rem;
+}
+
+.tech-card {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.35rem 1.3rem;
+  transition: var(--theme-transition);
+}
+
+.tech-card:hover {
+  border-color: var(--border-strong);
+}
+
+.tech-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+}
+
+.tech-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  flex-shrink: 0;
+}
+
+.tech-card h3 {
+  font-size: 1.1rem;
+}
+
+.tech-card p {
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+/* ----------------------------- 11. FORMULÁRIO ------------------------------ */
+
+.form-field {
+  margin-bottom: 1.15rem;
+  text-align: left;
+}
+
+.form-field label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  margin-bottom: 0.4rem;
+}
+
+.form-field input,
+.form-field textarea {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-strong);
+  background: var(--input-bg);
+  color: var(--text-strong);
+  transition: var(--theme-transition);
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.75;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
+/* ---------------------------- 12. SCROLL-REVEAL ---------------------------- */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ----------------- 13. ACESSIBILIDADE E MOVIMENTO REDUZIDO ----------------- */
+
+:focus-visible {
+  outline: 2.5px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.btn:focus-visible,
+.theme-toggle:focus-visible,
+.modal-close:focus-visible,
+.about-link:focus-visible {
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ------------------------------ RESPONSIVO -------------------------------- */
+
+/* Área segura (notch/Dynamic Island no iPhone, barra de gestos no Android) —
+   depende de viewport-fit=cover no <meta name="viewport"> do HTML. */
+.site-header {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.site-footer {
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+}
+
+.modal-backdrop {
+  padding: max(1.25rem, env(safe-area-inset-top, 0px))
+    max(1.25rem, env(safe-area-inset-right, 0px))
+    max(1.25rem, env(safe-area-inset-bottom, 0px))
+    max(1.25rem, env(safe-area-inset-left, 0px));
+}
+
+@media (max-width: 768px) {
+  .tech-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero {
+    padding-block: clamp(6.5rem, 22vw, 9rem) clamp(3.5rem, 10vw, 5rem);
+  }
+
+  .hero-cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-cta .btn {
+    width: 100%;
+  }
+
+  .how-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-choice {
+    flex-direction: column;
+  }
+
+  .modal-choice .btn {
+    width: 100%;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .modal-header,
+  .modal-body {
+    padding-inline: 1.25rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .avatar {
+    width: 88px;
+    height: 88px;
+    font-size: 1.8rem;
+  }
+
+  .brand-name {
+    font-size: 1rem;
+  }
+}
+
+/* Alvos de toque maiores em telas sensíveis ao toque (Android/iPhone) —
+   evita botões pequenos demais para o dedo, independente da largura da tela. */
+@media (hover: none) and (pointer: coarse) {
+  .theme-toggle,
+  .modal-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .modal-small .modal-close {
+    width: 40px;
+    height: 40px;
+  }
+
+  .btn {
+    min-height: 44px;
+  }
+
+  /* Evita zoom automático do Safari/iOS ao focar campos com fonte < 16px */
+  .form-field input,
+  .form-field textarea {
+    font-size: 16px;
+  }
+}
