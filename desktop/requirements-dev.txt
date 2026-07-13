@@ -1,2 +1,3 @@
 -r requirements.txt
 pytest
+pytest-qt==4.5.0
