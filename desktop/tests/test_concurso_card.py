@@ -1,101 +1,124 @@
-"""Testes unitários para ConcursoCard — botão "Copiar link" (ENTREGA-02).
+"""Testes qtbot para ConcursoCard — chips com overflow (D-03), badge NOVO,
+e "Copiar link" (ENTREGA-02).
 
-Usa raiz Tk real com escopo de módulo (padrão estabelecido em test_busca_tab.py)
-para evitar TclError no Windows ao criar/destruir múltiplos intérpretes Tcl.
-Monkeypatching de clipboard via setattr direto no root Tk.
+Clipboard é monkeypatched diretamente no objeto retornado por
+`QApplication.clipboard()` (substitui o antigo monkeypatch de
+`clipboard_clear`/`clipboard_append` do Tk root, per 05-PATTERNS.md Test
+Patterns).
 """
 
-import tkinter as tk
+from __future__ import annotations
 
-import pytest
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton
 
-from app.ui.concurso_card import ConcursoCard
-
-
-@pytest.fixture(scope="module")
-def _shared_root():
-    r = tk.Tk()
-    r.withdraw()
-    yield r
-    r.destroy()
+from app.ui.concurso_card import ConcursoCard, _OverflowChip
 
 
-@pytest.fixture
-def root(_shared_root):
-    yield _shared_root
-    for child in _shared_root.winfo_children():
-        child.destroy()
+def _chip_widgets(card):
+    flow = card._chip_flow
+    return [flow.itemAt(i).widget() for i in range(flow.count())]
 
 
-def test_copiar_link_chama_clipboard(root, monkeypatch):
-    """_copiar_link() limpa o clipboard, appende a URL correta e exibe 'Copiado!'."""
+def _chip_texts(card):
+    return [w.text() for w in _chip_widgets(card)]
+
+
+def _base_concurso(**overrides) -> dict:
     concurso = {
         "titulo": "Concurso Teste",
         "cargos": [],
-        "datas": {},
+        "datas": {"fim": "31/12/2026"},
         "noticia": {"link": "https://test.com/edital"},
         "is_new": False,
     }
-    card = ConcursoCard(root, concurso)
+    concurso.update(overrides)
+    return concurso
 
-    clear_calls = []
-    append_calls = []
 
-    tk_root = card.winfo_toplevel()
-    monkeypatch.setattr(tk_root, "clipboard_clear", lambda: clear_calls.append(True))
+def test_tres_cargos_sem_overflow(qtbot):
+    concurso = _base_concurso(cargos=["Engenheiro", "Analista", "Técnico"])
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+
+    texts = _chip_texts(card)
+    assert texts == ["Engenheiro", "Analista", "Técnico"]
+    assert not any(isinstance(w, _OverflowChip) for w in _chip_widgets(card))
+
+
+def test_oito_cargos_colapsa_em_cinco_com_overflow_expansivel(qtbot):
+    cargos = [f"Cargo {i}" for i in range(1, 9)]  # 8 cargos
+    concurso = _base_concurso(cargos=cargos)
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+
+    widgets = _chip_widgets(card)
+    assert len(widgets) == 6  # 5 chips + 1 controle de overflow
+    toggle = widgets[-1]
+    assert isinstance(toggle, _OverflowChip)
+    assert toggle.text() == "+3 outros"
+
+    qtbot.mouseClick(toggle, Qt.MouseButton.LeftButton)
+
+    widgets = _chip_widgets(card)
+    assert len(widgets) == 9  # 8 chips + o controle relabeled
+    toggle = widgets[-1]
+    assert isinstance(toggle, _OverflowChip)
+    assert toggle.text() == "mostrar menos"
+
+    qtbot.mouseClick(toggle, Qt.MouseButton.LeftButton)
+
+    widgets = _chip_widgets(card)
+    assert len(widgets) == 6
+    assert widgets[-1].text() == "+3 outros"
+
+
+def test_copiar_link_seta_clipboard_e_mostra_feedback(qtbot, monkeypatch):
+    concurso = _base_concurso(cargos=[])
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+
+    calls = []
     monkeypatch.setattr(
-        tk_root, "clipboard_append", lambda text: append_calls.append(text)
+        QApplication.clipboard(), "setText", lambda text: calls.append(text)
     )
 
     card._copiar_link()
 
-    assert len(clear_calls) == 1, "clipboard_clear deve ser chamado exatamente 1 vez"
-    assert append_calls == [
-        "https://test.com/edital"
-    ], "clipboard_append deve receber a URL correta"
-    assert (
-        card._feedback_label.cget("text") == "Copiado!"
-    ), "feedback label deve exibir 'Copiado!' após clicar"
+    assert calls == ["https://test.com/edital"]
+    assert card._feedback_label.text() == "Copiado!"
 
 
-def test_card_sem_link_sem_botao(root):
-    """Cards sem link não devem ter _feedback_label nem botão 'Copiar link'."""
-    concurso = {
-        "titulo": "Concurso Sem Link",
-        "cargos": [],
-        "datas": {},
-        "noticia": {"link": ""},
-        "is_new": False,
-    }
-    card = ConcursoCard(root, concurso)
+def test_badge_novo_presente_quando_is_new(qtbot):
+    concurso = _base_concurso(cargos=[], is_new=True)
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
 
-    assert not hasattr(
-        card, "_feedback_label"
-    ), "Card sem link não deve ter _feedback_label"
-    assert not hasattr(
-        card, "_copiar_link"
-    ), "Card sem link não deve ter método _copiar_link"
+    novo_labels = [w for w in card.findChildren(QLabel) if w.text() == "NOVO"]
+    assert len(novo_labels) == 1
 
-    # Confirmar que nenhum widget filho tem text="Copiar link"
-    def _get_all_widgets(widget):
-        children = widget.winfo_children()
-        result = list(children)
-        for child in children:
-            result.extend(_get_all_widgets(child))
-        return result
 
-    all_widgets = _get_all_widgets(card)
-    copiar_texts = [
-        w
-        for w in all_widgets
-        if hasattr(w, "cget") and _widget_text(w) == "Copiar link"
+def test_badge_novo_ausente_quando_nao_new(qtbot):
+    concurso = _base_concurso(cargos=[], is_new=False)
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+
+    novo_labels = [w for w in card.findChildren(QLabel) if w.text() == "NOVO"]
+    assert len(novo_labels) == 0
+
+
+def test_card_sem_link_omite_botao_copiar_e_mostra_fallback(qtbot):
+    concurso = _base_concurso(cargos=[], noticia={"link": ""})
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+
+    assert not hasattr(card, "_feedback_label")
+    assert not hasattr(card, "_link")
+
+    copiar_buttons = [
+        w for w in card.findChildren(QPushButton) if w.text() == "Copiar link"
     ]
-    assert len(copiar_texts) == 0, "Nenhum widget deve ter text='Copiar link' quando link está vazio"
+    assert copiar_buttons == []
 
-
-def _widget_text(widget) -> str:
-    """Retorna o text de um widget de forma segura, ou '' se não suportado."""
-    try:
-        return widget.cget("text")
-    except Exception:
-        return ""
+    fallback_labels = [w for w in card.findChildren(QLabel) if w.text() == "link não disponível"]
+    assert len(fallback_labels) == 1
