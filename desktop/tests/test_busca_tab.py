@@ -1,23 +1,15 @@
-"""Tests for BuscaTab's click-wiring/state-flip logic (BUSCA-06).
+"""Testes qtbot para BuscaTab — dispatch/progress (BUSCA-06), resultados,
+empty-state, erro, e exportação de PDF (ENTREGA-01).
 
-Uses a real `tk.Tk()` root (widget construction/state requires a live Tk
-display) but stubs `busca_tab.run_in_background` at the module level so no
-real network dispatch/threading happens — these are logic-level tests on
-the callback wiring, not full end-to-end/visual tests (per 03-RESEARCH.md's
-Validation Architecture note on Tkinter GUI testability).
-
-The Tk root is created once per module (not once per test) and reused: this
-environment (Windows/Tcl 8.6/Python 3.14) intermittently raises a spurious
-`_tkinter.TclError: Can't find a usable init.tcl` when many `tk.Tk()`
-instances are constructed/destroyed back-to-back within one process — a
-known Tcl interpreter re-initialization flakiness unrelated to any code in
-this module (reproduced with a trivial fixture-only script with zero
-`BuscaTab`/`ConcursoCard` involvement). Reusing a single hidden root and
-destroying only its children between tests avoids repeated interpreter
-teardown/creation and eliminates the flakiness.
+Segue o idiom `_Captured`/stub estabelecido em 05-PATTERNS.md (Test
+Patterns) e já usado em `test_login_page.py`: `run_in_background` é
+monkeypatched no módulo `busca_tab` para capturar `fn`/`on_success`/
+`on_error` sem disparar rede real nem QThreadPool. Assinatura do stub já
+reflete a nova (sem `root`): `stub(self, fn, on_success, on_error)`.
 """
 
-import tkinter as tk
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 import pytest
@@ -38,32 +30,17 @@ class _FakeSession:
 class _Captured:
     """Captures fn/on_success/on_error from a stubbed run_in_background call."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.fn = None
         self.on_success = None
         self.on_error = None
         self.calls = 0
 
-    def stub(self, _root, fn, on_success, on_error):
+    def stub(self, fn, on_success, on_error) -> None:
         self.fn = fn
         self.on_success = on_success
         self.on_error = on_error
         self.calls += 1
-
-
-@pytest.fixture(scope="module")
-def _shared_root():
-    r = tk.Tk()
-    r.withdraw()
-    yield r
-    r.destroy()
-
-
-@pytest.fixture
-def root(_shared_root):
-    yield _shared_root
-    for child in _shared_root.winfo_children():
-        child.destroy()
 
 
 @pytest.fixture
@@ -73,21 +50,35 @@ def captured(monkeypatch):
     return cap
 
 
-def test_button_disabled_during_search(root, captured):
-    tab = BuscaTab(root, _FakeSession())
-    tab._query_entry.insert(0, "concurso na área de saúde")
+@pytest.fixture
+def tab(qtbot, captured):
+    widget = BuscaTab(_FakeSession())
+    qtbot.addWidget(widget)
+    return widget
+
+
+def _cards(tab: BuscaTab) -> list[ConcursoCard]:
+    return [
+        tab._results_layout.itemAt(i).widget()
+        for i in range(tab._results_layout.count())
+        if tab._results_layout.itemAt(i).widget() is not None
+    ]
+
+
+def test_button_disabled_and_progress_shown_during_search(qtbot, tab, captured):
+    tab._query_entry.setText("concurso na área de saúde")
 
     tab._start_search()
 
     assert captured.calls == 1  # dispatched, but stubbed — no response yet
-    assert str(tab._buscar_button["state"]) == "disabled"
-    assert tab._status_label["text"] == BuscaTab.LOADING_TEXT
-    assert tab._progress.winfo_manager() == "pack"
+    assert tab._buscar_button.isEnabled() is False
+    assert tab._progress.isHidden() is False
+    assert tab._status_label.isHidden() is False
+    assert tab._status_label.text() == BuscaTab.LOADING_TEXT
 
 
-def test_success_renders_cards_and_reenables(root, captured):
-    tab = BuscaTab(root, _FakeSession())
-    tab._query_entry.insert(0, "concurso na área de saúde")
+def test_success_renders_cards_and_enables_pdf_and_reenables_buscar(qtbot, tab, captured):
+    tab._query_entry.setText("concurso na área de saúde")
     tab._start_search()
 
     response = {
@@ -101,48 +92,88 @@ def test_success_renders_cards_and_reenables(root, captured):
     }
     captured.on_success(response)
 
-    assert str(tab._buscar_button["state"]) == "normal"
-    cards = [
-        child
-        for child in tab._results_frame.winfo_children()
-        if isinstance(child, ConcursoCard)
-    ]
-    assert len(cards) == 2
+    assert tab._buscar_button.isEnabled() is True
+    assert tab._progress.isHidden() is True
+    assert tab._status_label.isHidden() is True
+    assert tab._btn_gerar_pdf.isEnabled() is True
+    assert len(_cards(tab)) == 2
+    assert tab._empty_label.isHidden() is True
 
 
-def test_empty_shows_message(root, captured):
-    tab = BuscaTab(root, _FakeSession())
-    tab._query_entry.insert(0, "algo bem específico")
+def test_empty_shows_backend_message_verbatim(qtbot, tab, captured):
+    tab._query_entry.setText("algo bem específico")
     tab._start_search()
 
     response = {"results": [], "count": 0, "is_empty": True, "message": "Nada encontrado"}
     captured.on_success(response)
 
-    assert tab._status_label["text"] == "Nada encontrado"
+    assert tab._empty_label.isHidden() is False
+    assert tab._empty_label.text() == "Nada encontrado"
+    assert len(_cards(tab)) == 0
+    assert tab._btn_gerar_pdf.isEnabled() is False
 
 
-def test_empty_falls_back_when_message_none(root, captured):
-    tab = BuscaTab(root, _FakeSession())
-    tab._query_entry.insert(0, "algo bem específico")
+def test_empty_falls_back_when_message_none(qtbot, tab, captured):
+    tab._query_entry.setText("algo bem específico")
     tab._start_search()
 
     response = {"results": [], "count": 0, "is_empty": True, "message": None}
     captured.on_success(response)
 
-    assert tab._status_label["text"] == BuscaTab.EMPTY_FALLBACK
+    assert tab._empty_label.isHidden() is False
+    assert tab._empty_label.text() == BuscaTab.EMPTY_FALLBACK
 
 
-def test_error_shows_banner_verbatim(root, captured):
+def test_error_shows_detail_verbatim_via_infobar(qtbot, tab, captured):
     class _FakeSearchFailedError(Exception):
         def __init__(self, detail):
             self.detail = detail
             super().__init__(detail)
 
-    tab = BuscaTab(root, _FakeSession())
-    tab._query_entry.insert(0, "concurso na área de saúde")
+    tab._query_entry.setText("concurso na área de saúde")
     tab._start_search()
 
     captured.on_error(_FakeSearchFailedError("Falha na IA"))
 
-    assert str(tab._buscar_button["state"]) == "normal"
-    assert tab._banner["text"] == "Falha na IA"
+    assert tab._buscar_button.isEnabled() is True
+    assert tab._progress.isHidden() is True
+    assert tab._error_bar is not None
+    assert tab._error_bar.content == "Falha na IA"
+
+
+def test_gerar_pdf_writes_file_and_shows_pdf_row(qtbot, tab, captured, monkeypatch, tmp_path):
+    from app.ui import busca_tab as module
+
+    monkeypatch.setattr(
+        "app.pdf_export.gerar_pdf", lambda resultados, query: b"%PDF-1.4 test"
+    )
+    monkeypatch.setattr("app.config.APP_DIR", tmp_path)
+
+    tab._resultados = [{"titulo": "Concurso A", "cargos": [], "datas": {}, "noticia": {}}]
+    tab._query_str = "busca teste"
+
+    tab._gerar_pdf()
+
+    assert tab._pdf_path == tmp_path / "resultados.pdf"
+    assert tab._pdf_path.exists()
+    assert tab._pdf_path.read_bytes() == b"%PDF-1.4 test"
+    assert tab._pdf_row.isHidden() is False
+
+
+def test_apagar_pdf_removes_file_and_hides_row(qtbot, tab, monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        "app.pdf_export.gerar_pdf", lambda resultados, query: b"%PDF-1.4 test"
+    )
+    monkeypatch.setattr("app.config.APP_DIR", tmp_path)
+
+    tab._resultados = [{"titulo": "Concurso A", "cargos": [], "datas": {}, "noticia": {}}]
+    tab._query_str = "busca teste"
+    tab._gerar_pdf()
+    pdf_path = tab._pdf_path
+    assert pdf_path.exists()
+
+    tab._apagar_pdf()
+
+    assert not pdf_path.exists()
+    assert tab._pdf_path is None
+    assert tab._pdf_row.isHidden() is True
