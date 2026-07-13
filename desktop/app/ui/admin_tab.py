@@ -63,7 +63,7 @@ class _PasswordRevealDialog(MessageBoxBase):
     Read-only field + `Copiar senha` (copies to clipboard and relabels
     itself `Copiado!`, staying open) + `Fechar` (closes). Auto-centered/
     masked by `MessageBoxBase` — no manual geometry math (unlike the
-    Tkinter analog's `winfo_reqwidth`/`winfo_reqheight` centering).
+    Tkinter analog's requested-size-based centering).
     """
 
     def __init__(self, username: str, password: str, parent=None) -> None:
