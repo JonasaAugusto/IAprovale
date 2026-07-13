@@ -146,6 +146,23 @@ class ConcursoCard(CardWidget):
         self._expanded = not self._expanded
         self._render_chips()
 
+    def refresh_theme(self) -> None:
+        """Recompute cargo-chip colors after a live theme toggle.
+
+        Chips are plain `QLabel`/`QPushButton` with hand-built QSS decided
+        via `isDarkTheme()` at construction time (`_chip_qss`) — unlike the
+        registered qfluentwidgets components used elsewhere (`CardWidget`,
+        `StrongBodyLabel`, etc.), they are NOT re-styled automatically by
+        `qfluentwidgets.setTheme()`. Called by `BuscaTab.refresh_theme()`
+        (in turn called by `MainWindow.refresh_theme()` from
+        `main.py::_toggle_theme`) INSTEAD OF rebuilding the card, so
+        already-rendered search results survive a theme toggle
+        (modo-noturno-bugado). Reuses `_render_chips()`, which already
+        recomputes chip QSS from scratch — same code path as the existing
+        "+N outros" expand/collapse toggle.
+        """
+        self._render_chips()
+
     def _copiar_link(self) -> None:
         QApplication.clipboard().setText(self._link)
         self._feedback_label.setText(_COPIED_TEXT)

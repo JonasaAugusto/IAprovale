@@ -45,16 +45,30 @@ from app.ui import styles
 _BLANK_USERNAME_MSG = "Informe um nome de usuário."
 
 
+_DESTRUCTIVE_BASE_STYLE_PROPERTY = "_gsd_destructive_base_style"
+
+
 def _style_destructive(button) -> None:
     """Recolor a button's text as destructive (Desativar/Excluir), keeping
     the rest of its Fluent chrome (pill shape, hover state) intact — the
     extra rule is appended after the library's own stylesheet so it wins
     the cascade for `color`/`font-weight` only.
+
+    Idempotent/re-callable: the button's ORIGINAL (pre-destructive)
+    stylesheet is cached in a Qt dynamic property on first call and reused
+    as the append base on every subsequent call, instead of appending onto
+    whatever `button.styleSheet()` currently returns (which, without this
+    cache, would keep concatenating duplicate destructive-color rules on
+    every re-call — e.g. once per live theme toggle via `AdminTab.
+    refresh_theme()` — growing the stylesheet string unbounded across
+    repeated toggles).
     """
+    base = button.property(_DESTRUCTIVE_BASE_STYLE_PROPERTY)
+    if base is None:
+        base = button.styleSheet()
+        button.setProperty(_DESTRUCTIVE_BASE_STYLE_PROPERTY, base)
     color = styles.COLOR_DESTRUCTIVE_DARK if isDarkTheme() else styles.COLOR_DESTRUCTIVE_LIGHT
-    button.setStyleSheet(
-        button.styleSheet() + f"\nQPushButton {{ color: {color}; font-weight: 600; }}"
-    )
+    button.setStyleSheet(base + f"\nQPushButton {{ color: {color}; font-weight: 600; }}")
 
 
 class _PasswordRevealDialog(MessageBoxBase):
@@ -394,3 +408,26 @@ class AdminTab(QWidget):
         if self._error_bar is not None:
             self._error_bar.close()
             self._error_bar = None
+
+    # --- live theme toggle (modo-noturno-bugado) -----------------------
+
+    def refresh_theme(self) -> None:
+        """Re-apply destructive-button coloring on already-rendered user
+        rows after a live theme toggle, without re-fetching the user list.
+
+        `_style_destructive`'s color choice is decided via `isDarkTheme()`
+        at row-build time (`_build_user_row`) and is NOT reactive to
+        `qfluentwidgets.setTheme()` on its own (it's a manual QSS append
+        on a plain `PushButton`, not something the library's own
+        stylesheet-manager tracks) — called by `MainWindow.refresh_theme()`
+        (in turn called by `main.py::_RootWindow._toggle_theme`) in place
+        of the old rebuild-the-whole-view approach.
+        """
+        for i in range(self._list_layout.count()):
+            item = self._list_layout.itemAt(i)
+            row = item.widget() if item is not None else None
+            if row is None:
+                continue
+            for button in row.findChildren(PushButton):
+                if button.text() in ("Desativar", "Excluir"):
+                    _style_destructive(button)

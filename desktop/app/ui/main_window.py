@@ -75,26 +75,45 @@ class MainWindow(QWidget):
         self._pivot = Pivot(self)
         self._stack = QStackedWidget(self)
 
-        busca = BuscaTab(session, self._stack)
-        self._stack.addWidget(busca)
+        self._busca_tab = BuscaTab(session, self._stack)
+        self._stack.addWidget(self._busca_tab)
         self._pivot.addItem(
             routeKey=_BUSCA_ROUTE,
             text=_BUSCA_ROUTE,
-            onClick=lambda: self._stack.setCurrentWidget(busca),
+            onClick=lambda: self._stack.setCurrentWidget(self._busca_tab),
         )
 
         # Admin tab decided ONCE here, at build time — session.is_admin is
         # immutable for the lifetime of a session, never re-checked/toggled.
+        self._admin_tab: AdminTab | None = None
         if session.is_admin:
-            admin = AdminTab(session, self._stack)
-            self._stack.addWidget(admin)
+            self._admin_tab = AdminTab(session, self._stack)
+            self._stack.addWidget(self._admin_tab)
             self._pivot.addItem(
                 routeKey=_ADMIN_ROUTE,
                 text=_ADMIN_ROUTE,
-                onClick=lambda: self._stack.setCurrentWidget(admin),
+                onClick=lambda: self._stack.setCurrentWidget(self._admin_tab),
             )
 
         layout.addWidget(self._pivot)
         layout.addWidget(self._stack, 1)
 
         self._pivot.setCurrentItem(_BUSCA_ROUTE)
+
+    def refresh_theme(self) -> None:
+        """Re-style child widgets that don't auto-update via qfluentwidgets'
+        `setTheme()` after a live theme toggle (modo-noturno-bugado).
+
+        Called by `main.py::_RootWindow._toggle_theme()` on the EXISTING
+        `MainWindow` instance, instead of the old approach of discarding
+        it and building a fresh one — that used to also discard in-memory
+        search state (query text, rendered results) on every toggle.
+        Registered qfluentwidgets components (`PushButton`, `CardWidget`,
+        `Pivot`, `SearchLineEdit`, etc.) already re-style themselves
+        reactively via the library's own theme-change mechanism and need
+        no help here; only the few widgets with manually-built,
+        construction-time QSS do.
+        """
+        self._busca_tab.refresh_theme()
+        if self._admin_tab is not None:
+            self._admin_tab.refresh_theme()

@@ -160,6 +160,48 @@ def test_gerar_pdf_writes_file_and_shows_pdf_row(qtbot, tab, captured, monkeypat
     assert tab._pdf_row.isHidden() is False
 
 
+def test_refresh_theme_restyles_rendered_cards_without_losing_state(qtbot, tab, captured):
+    """modo-noturno-bugado: a live theme toggle must re-style already
+    rendered ConcursoCards in place (chip QSS is decided via isDarkTheme()
+    at construction time, not reactive to setTheme()) WITHOUT discarding
+    _resultados/_query_str or re-querying the API.
+    """
+    tab._query_entry.setText("concurso na área de saúde")
+    tab._start_search()
+
+    response = {
+        "results": [
+            {"titulo": "Concurso A", "cargos": ["X"], "datas": {}, "noticia": {}},
+            {"titulo": "Concurso B", "cargos": ["Y"], "datas": {}, "noticia": {}},
+        ],
+        "count": 2,
+        "is_empty": False,
+        "message": None,
+    }
+    captured.on_success(response)
+
+    cards = _cards(tab)
+    assert len(cards) == 2
+    calls_before = captured.calls
+
+    refreshed = []
+    for card in cards:
+        card.refresh_theme = lambda card=card: refreshed.append(card)
+
+    tab.refresh_theme()
+
+    assert refreshed == cards  # every rendered card got refreshed
+    assert captured.calls == calls_before  # no re-query dispatched
+    assert tab._resultados == response["results"]  # state untouched
+    assert tab._query_str == "concurso na área de saúde"
+    assert _cards(tab) == cards  # same instances — nothing rebuilt
+
+
+def test_refresh_theme_is_a_noop_with_no_results(qtbot, tab):
+    tab.refresh_theme()  # must not raise when no cards are rendered yet
+    assert _cards(tab) == []
+
+
 def test_apagar_pdf_removes_file_and_hides_row(qtbot, tab, monkeypatch, tmp_path):
     monkeypatch.setattr(
         "app.pdf_export.gerar_pdf", lambda resultados, query: b"%PDF-1.4 test"

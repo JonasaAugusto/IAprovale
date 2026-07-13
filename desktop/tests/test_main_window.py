@@ -15,7 +15,9 @@ Tkinter analog's `test_main_frame.py`.
 
 from dataclasses import dataclass
 
-from app.ui.main_window import visible_tab_labels
+import pytest
+
+from app.ui.main_window import MainWindow, visible_tab_labels
 
 
 @dataclass(frozen=True)
@@ -32,3 +34,39 @@ def test_admin_tab_conditional():
         "Admin",
     ]
     assert visible_tab_labels(_FakeSession(username="ana", is_admin=False)) == ["Busca"]
+
+
+# ---------------------------------------------------------------------------
+# refresh_theme() delegation (modo-noturno-bugado) — MainWindow.refresh_theme
+# must re-style its child tabs in place rather than being rebuilt itself, so
+# main.py::_RootWindow._toggle_theme can keep the same MainWindow instance.
+# ---------------------------------------------------------------------------
+
+
+def test_refresh_theme_delegates_to_busca_and_admin_tabs(qtbot, monkeypatch):
+    from app.ui import admin_tab as admin_tab_module
+
+    monkeypatch.setattr(admin_tab_module, "run_in_background", lambda *a, **k: None)
+
+    window = MainWindow(
+        _FakeSession(is_admin=True), on_logout=lambda: None, on_toggle_theme=lambda: None
+    )
+    qtbot.addWidget(window)
+
+    calls = []
+    monkeypatch.setattr(window._busca_tab, "refresh_theme", lambda: calls.append("busca"))
+    monkeypatch.setattr(window._admin_tab, "refresh_theme", lambda: calls.append("admin"))
+
+    window.refresh_theme()
+
+    assert calls == ["busca", "admin"]
+
+
+def test_refresh_theme_skips_admin_tab_when_absent(qtbot):
+    window = MainWindow(
+        _FakeSession(is_admin=False), on_logout=lambda: None, on_toggle_theme=lambda: None
+    )
+    qtbot.addWidget(window)
+    assert window._admin_tab is None
+
+    window.refresh_theme()  # must not raise with no admin tab present

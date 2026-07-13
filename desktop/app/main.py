@@ -10,10 +10,15 @@ Wires every module built in Plans 01-06 into a runnable app:
   `styles.apply_theme(theme)` exactly once at startup, before any page is
   built.
 - A live light/dark toggle (`_toggle_theme`) switches the qfluentwidgets
-  theme, persists the new preference, and rebuilds the current post-login
-  view so every widget repaints in the new theme (rebuild-on-toggle is an
-  accepted tradeoff carried over unchanged from the Tkinter analog — an
-  in-flight search's results are lost on a manual theme toggle).
+  theme, persists the new preference, and refreshes the EXISTING
+  post-login view in place (`MainWindow.refresh_theme()`) rather than
+  rebuilding it from scratch — registered qfluentwidgets components
+  already re-style themselves reactively, so only the few widgets with
+  manually-built, construction-time QSS need an explicit nudge. This
+  preserves in-memory search state (query text, rendered results) across
+  a manual theme toggle (see debug session modo-noturno-bugado — the old
+  full-rebuild approach used to discard that state; a "carried over from
+  the Tkinter analog" tradeoff that no longer applies).
 - Startup auto-login (D-01): a saved `auth_store.Session` is validated via
   the cheapest authenticated call, `GET /profile` (DB-only, no
   DeepSeek/MCP round trip) — an invalid/revoked token clears the session
@@ -50,6 +55,12 @@ class _RootWindow(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
+        # Required so `styles.window_background_qss`'s scoped `#RootWindow
+        # {...}` ID selector matches this widget and only this widget (see
+        # `styles.ROOT_WINDOW_OBJECT_NAME` — prevents the background rule
+        # from cascading into descendant plain QWidgets, which caused the
+        # "boxes inside boxes" regression around login-screen labels).
+        self.setObjectName(styles.ROOT_WINDOW_OBJECT_NAME)
         self.setWindowTitle(styles.TITLE)
         self.resize(*styles.WINDOW_SIZE)
         self.setMinimumSize(*styles.MIN_SIZE)
@@ -61,8 +72,14 @@ class _RootWindow(QWidget):
 
         self._theme = styles.load_theme_pref()
         styles.apply_theme(self._theme)  # must run before any page is built
+        # This widget is the real top-level window — qfluentwidgets'
+        # setTheme() never re-styles plain QWidgets (only registered
+        # Fluent components), so its background must be set explicitly
+        # here and again on every toggle (see modo-noturno-bugado).
+        self.setStyleSheet(styles.window_background_qss(self._theme))
 
         self._session: auth_store.Session | None = None
+        self._main_window: MainWindow | None = None
 
         self._try_auto_login()
 
@@ -79,17 +96,17 @@ class _RootWindow(QWidget):
             old.deleteLater()
 
     def _show_login(self) -> None:
+        self._main_window = None
         self._swap(LoginPage(on_success=self._after_login))
 
     def _show_main(self, session: auth_store.Session) -> None:
         self._session = session
-        self._swap(
-            MainWindow(
-                session,
-                on_logout=self._logout,
-                on_toggle_theme=self._toggle_theme,
-            )
+        self._main_window = MainWindow(
+            session,
+            on_logout=self._logout,
+            on_toggle_theme=self._toggle_theme,
         )
+        self._swap(self._main_window)
 
     # ------------------------------------------------------------------
     # Theme toggle
@@ -101,13 +118,19 @@ class _RootWindow(QWidget):
         )
         styles.apply_theme(new_theme)
         styles.save_theme_pref(new_theme)
+        self.setStyleSheet(styles.window_background_qss(new_theme))
         self._theme = new_theme
-        # Rebuild the current post-login view so freshly-built widgets pick
-        # up the theme's updated surface colors. Note: an in-flight
-        # search's results are lost on a manual theme toggle — accepted
-        # tradeoff, carried over unchanged from the Tkinter analog.
-        if self._session is not None:
-            self._show_main(self._session)
+        # Refresh the EXISTING post-login view in place instead of
+        # rebuilding it — registered qfluentwidgets components (PushButton,
+        # CardWidget, Pivot, SearchLineEdit, etc.) already re-style
+        # themselves reactively via styles.apply_theme()/setTheme() above;
+        # MainWindow.refresh_theme() only needs to explicitly re-style the
+        # few widgets with manually-built, construction-time QSS (cargo
+        # chips in ConcursoCard, destructive buttons in AdminTab). This
+        # preserves in-memory search state (query text, rendered results)
+        # across a manual theme toggle (see modo-noturno-bugado).
+        if self._main_window is not None:
+            self._main_window.refresh_theme()
 
     # ------------------------------------------------------------------
     # Login / logout

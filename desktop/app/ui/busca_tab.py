@@ -340,6 +340,26 @@ class BuscaTab(QWidget):
             self._error_bar = None
 
     # ------------------------------------------------------------------
+    # Live theme toggle (modo-noturno-bugado) — refresh non-reactive
+    # widgets in place instead of losing search state to a full rebuild.
+    # ------------------------------------------------------------------
+
+    def refresh_theme(self) -> None:
+        """Re-style already-rendered `ConcursoCard`s after a live theme
+        toggle, without re-querying the API or discarding `_resultados`/
+        `_query_str`. Called by `MainWindow.refresh_theme()` (in turn
+        called by `main.py::_RootWindow._toggle_theme`) in place of the
+        old rebuild-the-whole-view approach — see `ConcursoCard.refresh_theme`
+        for why cards specifically need this (chip QSS is decided via
+        `isDarkTheme()` at construction time, not reactive).
+        """
+        for i in range(self._results_layout.count()):
+            item = self._results_layout.itemAt(i)
+            widget = item.widget() if item is not None else None
+            if isinstance(widget, ConcursoCard):
+                widget.refresh_theme()
+
+    # ------------------------------------------------------------------
     # Tutorial modal — "?" button next to the query row
     # ------------------------------------------------------------------
 

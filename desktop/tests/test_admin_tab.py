@@ -216,6 +216,61 @@ def test_blank_username_shows_error_without_dispatch(qtbot, tab, captured):
     assert tab._error_bar.content == "Informe um nome de usuário."
 
 
+# ---------------------------------------------------------------------------
+# (e) live theme toggle (modo-noturno-bugado) — refresh destructive-button
+#     coloring in place, without re-fetching the user list, and without
+#     unbounded stylesheet growth across repeated toggles
+# ---------------------------------------------------------------------------
+
+
+def test_refresh_theme_restyles_destructive_buttons_without_reloading(
+    qtbot, tab, captured, monkeypatch
+):
+    users = [
+        {"user_id": "admin-1", "username": "jonas", "is_admin": True, "is_active": True},
+        {"user_id": "user-2", "username": "ana", "is_admin": False, "is_active": True},
+    ]
+    captured.on_success(users)
+    calls_before = captured.calls
+
+    original = admin_tab_module._style_destructive
+    styled = []
+
+    def _spy(button):
+        styled.append(button.text())
+        original(button)
+
+    monkeypatch.setattr(admin_tab_module, "_style_destructive", _spy)
+
+    tab.refresh_theme()
+
+    assert captured.calls == calls_before  # no re-fetch of the user list
+    # Own row only has "Desativar" (Excluir hidden on the acting admin);
+    # the other row has both.
+    assert sorted(styled) == ["Desativar", "Desativar", "Excluir"]
+
+
+def test_style_destructive_is_idempotent_across_repeated_calls(qtbot, tab, captured):
+    """Repeated calls (one per live theme toggle) must not keep
+    concatenating duplicate destructive-color rules onto the button's
+    stylesheet — the base style is cached so each call replaces, not
+    appends onto, the previous destructive rule.
+    """
+    from qfluentwidgets import PushButton
+
+    button = PushButton("Desativar")
+    qtbot.addWidget(button)
+
+    admin_tab_module._style_destructive(button)
+    once = button.styleSheet()
+    admin_tab_module._style_destructive(button)
+    twice = button.styleSheet()
+    admin_tab_module._style_destructive(button)
+    thrice = button.styleSheet()
+
+    assert once == twice == thrice
+
+
 def test_add_button_disabled_then_reenabled_on_error(qtbot, tab, captured):
     tab._username_entry.setText("nova")
     tab._on_add_click()

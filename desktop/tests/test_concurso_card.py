@@ -107,6 +107,32 @@ def test_badge_novo_ausente_quando_nao_new(qtbot):
     assert len(novo_labels) == 0
 
 
+def test_refresh_theme_recomputes_chip_colors_on_theme_change(qtbot, monkeypatch):
+    """modo-noturno-bugado: chip QSS is decided via isDarkTheme() at
+    construction time (_chip_qss), so it does NOT auto-update when
+    qfluentwidgets.setTheme() runs — refresh_theme() must recompute it
+    on demand (called by BuscaTab.refresh_theme() on a live theme toggle,
+    in place of rebuilding the card from scratch).
+    """
+    from app.ui import concurso_card as concurso_card_module
+
+    monkeypatch.setattr(concurso_card_module, "isDarkTheme", lambda: False)
+    concurso = _base_concurso(cargos=["Engenheiro"])
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+
+    light_style = _chip_widgets(card)[0].styleSheet()
+
+    monkeypatch.setattr(concurso_card_module, "isDarkTheme", lambda: True)
+    card.refresh_theme()
+
+    dark_style = _chip_widgets(card)[0].styleSheet()
+
+    assert light_style != dark_style
+    assert "rgba(0, 0, 0, 0.06)" in light_style
+    assert "rgba(255, 255, 255, 0.08)" in dark_style
+
+
 def test_card_sem_link_omite_botao_copiar_e_mostra_fallback(qtbot):
     concurso = _base_concurso(cargos=[], noticia={"link": ""})
     card = ConcursoCard(concurso)
