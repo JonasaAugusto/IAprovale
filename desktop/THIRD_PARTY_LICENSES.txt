@@ -1,0 +1,39 @@
+Concurso Finder (desktop client) — Third-Party License Notice
+================================================================
+
+This directory's source code is licensed under the MIT License (see the
+repository root LICENSE file). However, the compiled/packaged executable
+distributed from this directory (ConcursoFinder.exe, built via
+ConcursoFinder.spec) bundles the following third-party component under its
+own, more restrictive license:
+
+  PySide6-Fluent-Widgets (import name: qfluentwidgets)
+  Version: 1.11.2
+  License: GNU General Public License v3.0 (GPLv3)
+  Source: https://github.com/zhiyiYo/PyQt-Fluent-Widgets
+  Author: zhiyiYo
+
+Because this GPLv3-licensed library is compiled directly into the same
+PyInstaller executable as this project's own code, the resulting compiled
+artifact (ConcursoFinder.exe, and the full desktop/dist/ConcursoFinder/
+directory it ships in) is distributed as a GPLv3-licensed combined work,
+regardless of the MIT license that otherwise applies to this repository's
+source code.
+
+What this means in practice:
+  - Anyone who receives ConcursoFinder.exe has the rights guaranteed by
+    GPLv3 for that specific compiled artifact, including the right to
+    redistribute it and to obtain the corresponding source code.
+  - The corresponding source code is already publicly available in this
+    same repository (github.com/JonasaAugusto/IAprovale), which satisfies
+    this obligation.
+  - This notice does not change the license of the source code itself
+    (which remains MIT) — it documents the license status of the specific
+    compiled .exe artifact that bundles qfluentwidgets.
+
+PySide6 itself (the base Qt binding, separate from the Fluent-Widgets
+component above) is licensed under LGPLv3, a materially lighter-weight
+license that does not impose the same combined-work obligation.
+
+Full GPLv3 text: https://www.gnu.org/licenses/gpl-3.0.html
+Full LGPLv3 text: https://www.gnu.org/licenses/lgpl-3.0.html
