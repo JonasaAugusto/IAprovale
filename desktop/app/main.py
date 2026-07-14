@@ -207,8 +207,16 @@ def main() -> None:
 
     app = QApplication(sys.argv)
     if _ICON_PATH.exists():
-        app.setWindowIcon(QIcon(str(_ICON_PATH)))
+        icon = QIcon(str(_ICON_PATH))
+        app.setWindowIcon(icon)
     window = _RootWindow()
+    if _ICON_PATH.exists():
+        # Belt-and-suspenders: set it on the window itself too, not just the
+        # QApplication default. On some Windows/Qt combinations the native
+        # titlebar/taskbar HICON is only reliably picked up when the icon is
+        # set on the concrete top-level widget, not only propagated from
+        # QApplication.setWindowIcon() before that widget existed.
+        window.setWindowIcon(icon)
     window.show()
     sys.exit(app.exec())
 
