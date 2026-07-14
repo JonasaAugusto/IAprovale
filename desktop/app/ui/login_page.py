@@ -9,8 +9,8 @@ successful login.
 
 D-05 (NEW behavior — not present in the Tkinter analog): the instant login
 is submitted, the "Entrar" button disables AND its text changes to
-"Conectando à API...", visible feedback during Render's cold-start wait
-(the old version only disabled the button with no explanatory text).
+"Conectando ao servidor...", visible feedback during Render's cold-start
+wait (the old version only disabled the button with no explanatory text).
 Reverts to "Entrar"/enabled on success or error.
 
 Error handling follows 05-UI-SPEC.md's Error Display Contract: failures
@@ -24,8 +24,11 @@ remains the entry point's (`main.py`) responsibility.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QVBoxLayout, QWidget
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     CardWidget,
@@ -42,7 +45,9 @@ from app.async_helpers import run_in_background
 from app.ui import styles
 
 _ENTRAR_TEXT = "Entrar"
-_CONNECTING_TEXT = "Conectando à API..."  # D-05
+_CONNECTING_TEXT = "Conectando ao servidor..."
+
+_LOGO_PATH = Path(__file__).parent.parent / "assets" / "logo.png"
 
 
 class LoginPage(QWidget):
@@ -66,6 +71,17 @@ class LoginPage(QWidget):
             styles.SPACING_XL,
             styles.SPACING_XL,
         )
+
+        if _LOGO_PATH.exists():
+            logo_label = QLabel(card)
+            pixmap = QPixmap(str(_LOGO_PATH))
+            if not pixmap.isNull():
+                logo_label.setPixmap(
+                    pixmap.scaledToHeight(64, Qt.TransformationMode.SmoothTransformation)
+                )
+                logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                card_layout.addWidget(logo_label)
+                card_layout.addSpacing(styles.SPACING_MD)
 
         card_layout.addWidget(TitleLabel("Concurso Finder", card))
         card_layout.addSpacing(styles.SPACING_LG)

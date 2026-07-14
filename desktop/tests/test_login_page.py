@@ -47,14 +47,14 @@ def page(qtbot, captured):
 
 
 def test_submit_disables_button_and_shows_connecting_text(qtbot, page, captured):
-    """D-05: ao submeter, o botão desabilita e mostra 'Conectando à API...'."""
+    """D-05: ao submeter, o botão desabilita e mostra 'Conectando ao servidor...'."""
     page._username_entry.setText("jonas")
     page._password_entry.setText("segredo")
 
     page._on_submit()
 
     assert captured.calls == 1
-    assert page._entrar_button.text() == "Conectando à API..."
+    assert page._entrar_button.text() == "Conectando ao servidor..."
     assert page._entrar_button.isEnabled() is False
 
 
@@ -94,6 +94,26 @@ def test_login_error_shows_detail_verbatim_and_resets_button(qtbot, page, captur
     assert page._entrar_button.isEnabled() is True
     assert page._error_bar is not None
     assert page._error_bar.content == "Usuário ou senha inválidos."
+
+
+def test_construction_never_raises_without_logo_asset(qtbot, captured, monkeypatch, tmp_path):
+    """LoginPage must build normally, with no logo widget, when
+    app/assets/logo.png is absent — path is monkeypatched to a nonexistent
+    file so this holds regardless of whether the real asset is present."""
+    monkeypatch.setattr(login_page_module, "_LOGO_PATH", tmp_path / "nope.png")
+
+    widget = LoginPage(on_success=lambda session: None)
+    qtbot.addWidget(widget)
+    assert widget._entrar_button.text() == "Entrar"
+
+
+def test_construction_shows_logo_when_asset_present(qtbot, captured):
+    """desktop/app/assets/logo.png exists — LoginPage must build normally
+    and pick it up without raising."""
+    assert login_page_module._LOGO_PATH.exists()
+    widget = LoginPage(on_success=lambda session: None)
+    qtbot.addWidget(widget)
+    assert widget._entrar_button.text() == "Entrar"
 
 
 def test_enter_in_password_field_submits(qtbot, page, captured):

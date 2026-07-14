@@ -1,6 +1,16 @@
 # ConcursoFinder.spec
 # Build: cd desktop && .venv/Scripts/python -m PyInstaller ConcursoFinder.spec --noconfirm
+from pathlib import Path
+
 from PyInstaller.utils.hooks import collect_all, collect_data_files
+
+# Optional .exe icon — used only if the asset exists yet (does not today by
+# design; icon.ico has not been created). When app/assets/icon.ico and
+# app/assets/logo.png eventually land, they must ALSO be added to the
+# Analysis `datas` list below so they're bundled into the frozen build —
+# `collect_all`/`collect_data_files` above only pick up installed packages,
+# not this project's own app/assets/ directory.
+_icon = "app/assets/icon.ico" if Path("app/assets/icon.ico").exists() else None
 
 # qfluentwidgets: sem hook nativo em pyinstaller-hooks-contrib — coleta manual
 # de QSS/icones/fontes (05-RESEARCH.md Pitfall 2).
@@ -41,7 +51,7 @@ exe = EXE(
     strip=False,
     upx=False,          # --noupx: AV mitigation (T-05-AV)
     console=False,      # --noconsole: app GUI, sem terminal
-    icon=None,
+    icon=_icon,
 )
 
 coll = COLLECT(

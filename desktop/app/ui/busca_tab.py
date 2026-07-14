@@ -158,7 +158,7 @@ class _AjudaDialog(MessageBoxBase):
 
 
 class BuscaTab(QWidget):
-    LOADING_TEXT = "Buscando concursos... isso pode levar até 90s"
+    LOADING_TEXT = "Procurando..."
     EMPTY_FALLBACK = (
         "Nenhum concurso encontrado com esses critérios. "
         "Tente ajustar sua busca ou sua formação salva."
