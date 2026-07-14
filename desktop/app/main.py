@@ -53,7 +53,21 @@ from app.ui.main_window import MainWindow
 # .exe's own file icon (baked in by PyInstaller at build time via
 # ConcursoFinder.spec's `icon=` — that one requires a rebuild to change).
 # Existence-checked so absence never raises (asset may not exist yet).
-_ICON_PATH = Path(__file__).parent / "assets" / "icon.ico"
+#
+# PyInstaller quirk (confirmed via debug session icone-exe-nao-aparece):
+# unlike a normally-imported submodule, THIS file is the frozen bundle's
+# entry-point script, so its own __file__ inside the .exe resolves to
+# "<bundle_root>/main.py" (no "app/" prefix) instead of mirroring the
+# source tree like every other module does — Path(__file__).parent alone
+# would silently point one directory too shallow and never find the icon.
+# app/assets/ is bundled at "<bundle_root>/app/assets/" (ConcursoFinder.spec),
+# so the frozen base must be sys._MEIPASS/app explicitly.
+if getattr(sys, "frozen", False):
+    _APP_DIR = Path(sys._MEIPASS) / "app"
+else:
+    _APP_DIR = Path(__file__).parent
+
+_ICON_PATH = _APP_DIR / "assets" / "icon.ico"
 
 
 class _RootWindow(QWidget):
@@ -193,9 +207,7 @@ def main() -> None:
         # Without an explicit AppUserModelID, Windows can represent the
         # taskbar button using the *host* python.exe's own icon when run
         # unfrozen (dev mode) instead of the window icon set below — a
-        # well-known Windows taskbar quirk for interpreted GUI apps. The
-        # frozen .exe (PyInstaller) does not need this: it has its own
-        # process identity and bakes the icon in at build time.
+        # well-known Windows taskbar quirk for interpreted GUI apps.
         import ctypes
 
         try:
