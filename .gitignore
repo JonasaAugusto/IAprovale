@@ -14,5 +14,12 @@ desktop/dist/
 .planning/
 CLAUDE.md
 
+# Backend source lives in the separate private repo (iaprovalebackend) —
+# this local copy must never reach the public repo, even via `git add -A`
+backend/
+
+# Personal editor config, not shared workspace settings
+.vscode/
+
 # Internal working notes (AI Q&A draft), not meant for the public homepage repo
 web-app/homepage/\!duvidas/
