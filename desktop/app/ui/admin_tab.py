@@ -27,6 +27,7 @@ from qfluentwidgets import (
     CardWidget,
     CaptionLabel,
     CheckBox,
+    FluentStyleSheet,
     InfoBar,
     InfoBarPosition,
     LineEdit,
@@ -45,30 +46,39 @@ from app.ui import styles
 _BLANK_USERNAME_MSG = "Informe um nome de usuário."
 
 
-_DESTRUCTIVE_BASE_STYLE_PROPERTY = "_gsd_destructive_base_style"
-
-
 def _style_destructive(button) -> None:
     """Recolor a button's text as destructive (Desativar/Excluir), keeping
     the rest of its Fluent chrome (pill shape, hover state) intact — the
     extra rule is appended after the library's own stylesheet so it wins
     the cascade for `color`/`font-weight` only.
 
-    Idempotent/re-callable: the button's ORIGINAL (pre-destructive)
-    stylesheet is cached in a Qt dynamic property on first call and reused
-    as the append base on every subsequent call, instead of appending onto
-    whatever `button.styleSheet()` currently returns (which, without this
-    cache, would keep concatenating duplicate destructive-color rules on
-    every re-call — e.g. once per live theme toggle via `AdminTab.
-    refresh_theme()` — growing the stylesheet string unbounded across
-    repeated toggles).
+    Idempotent/re-callable: on EVERY call, the base chrome is regenerated
+    fresh via `FluentStyleSheet.BUTTON.apply(button)` (the exact same call
+    `PushButton.__init__` makes) — which resolves to the CURRENT
+    `qfluentwidgets` theme (`Theme.AUTO` -> `qconfig.theme`) — instead of
+    reusing a stylesheet snapshot cached from an earlier call.
+
+    This matters because `qfluentwidgets.setTheme()` (called by
+    `styles.apply_theme()` on every live theme toggle) ALSO resets every
+    registered `PushButton`'s `styleSheet()` to a fresh, correct,
+    current-theme chrome as a side effect of `updateStyleSheet()` — a
+    stylesheet cached from a PREVIOUS call (e.g. the button's construction
+    theme) would silently go stale: repeated calls after a real theme
+    change used to keep re-appending the new destructive COLOR onto the
+    OLD theme's frozen background/border/hover chrome, so Desativar/
+    Excluir's chrome (unlike Editar nome/Gerar nova senha, never touched
+    by `_style_destructive`) never actually updated past its first
+    construction theme (modo-noturno-bugado). Regenerating fresh each call
+    is still idempotent across repeated calls WITHOUT an intervening theme
+    change — `FluentStyleSheet.BUTTON.apply()` is deterministic for a
+    given theme, so the resulting stylesheet string is identical run to
+    run (see `test_style_destructive_is_idempotent_across_repeated_calls`).
     """
-    base = button.property(_DESTRUCTIVE_BASE_STYLE_PROPERTY)
-    if base is None:
-        base = button.styleSheet()
-        button.setProperty(_DESTRUCTIVE_BASE_STYLE_PROPERTY, base)
+    FluentStyleSheet.BUTTON.apply(button)
     color = styles.COLOR_DESTRUCTIVE_DARK if isDarkTheme() else styles.COLOR_DESTRUCTIVE_LIGHT
-    button.setStyleSheet(base + f"\nQPushButton {{ color: {color}; font-weight: 600; }}")
+    button.setStyleSheet(
+        button.styleSheet() + f"\nQPushButton {{ color: {color}; font-weight: 600; }}"
+    )
 
 
 class _PasswordRevealDialog(MessageBoxBase):

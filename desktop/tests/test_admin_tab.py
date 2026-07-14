@@ -271,6 +271,47 @@ def test_style_destructive_is_idempotent_across_repeated_calls(qtbot, tab, captu
     assert once == twice == thrice
 
 
+def test_style_destructive_refreshes_chrome_after_real_theme_change(qtbot, tab, captured):
+    """modo-noturno-bugado: _style_destructive used to cache the button's
+    pre-destructive stylesheet ONCE (on first call) and reuse that frozen
+    snapshot as the append base forever. But `qfluentwidgets.setTheme()`
+    (invoked by `styles.apply_theme()` on every live theme toggle) resets
+    EVERY registered PushButton's styleSheet() to a fresh, theme-correct
+    chrome as a side effect — a snapshot cached before that reset goes
+    stale, so a destructive button's chrome (background/border/hover)
+    used to stay frozen at whatever theme was active on its FIRST call,
+    forever, while its color text kept recomputing correctly. The chrome
+    (not just the color) must match a freshly-styled button in the
+    CURRENT theme after any number of theme changes.
+    """
+    from qfluentwidgets import PushButton
+
+    from app.ui import styles
+
+    styles.apply_theme(styles.THEME_LIGHT)
+    button = PushButton("Desativar")
+    qtbot.addWidget(button)
+    admin_tab_module._style_destructive(button)
+
+    # Real theme change (not just isDarkTheme() flipping) — this is what
+    # resets every registered PushButton's styleSheet() as a side effect.
+    styles.apply_theme(styles.THEME_DARK)
+    admin_tab_module._style_destructive(button)
+
+    color = styles.COLOR_DESTRUCTIVE_DARK
+    suffix = f"\nQPushButton {{ color: {color}; font-weight: 600; }}"
+    assert button.styleSheet().endswith(suffix)
+    chrome = button.styleSheet()[: -len(suffix)]
+
+    reference = PushButton("Editar nome")
+    qtbot.addWidget(reference)
+    assert chrome == reference.styleSheet()
+
+    # Restore light theme so this test doesn't leak global theme state
+    # into other tests running in the same process.
+    styles.apply_theme(styles.THEME_LIGHT)
+
+
 def test_add_button_disabled_then_reenabled_on_error(qtbot, tab, captured):
     tab._username_entry.setText("nova")
     tab._on_add_click()

@@ -38,7 +38,16 @@ _COPIED_FEEDBACK_MS = 1500
 
 def _chip_qss(*, accent: bool) -> str:
     bg = "rgba(255, 255, 255, 0.08)" if isDarkTheme() else "rgba(0, 0, 0, 0.06)"
-    color = styles.ACCENT if accent else "palette(window-text)"
+    if accent:
+        color = styles.ACCENT
+    else:
+        # Explicit, theme-conditioned color — NOT `palette(window-text)`.
+        # That QSS palette reference resolves against the QApplication's
+        # native/OS-influenced QPalette, which `qfluentwidgets.setTheme()`
+        # never touches, decoupling the chip text color from the app's
+        # in-app light/dark toggle (modo-noturno-bugado). See
+        # `styles.COLOR_TEXT_LIGHT`/`COLOR_TEXT_DARK` docstring.
+        color = styles.COLOR_TEXT_DARK if isDarkTheme() else styles.COLOR_TEXT_LIGHT
     return (
         f"background-color: {bg}; color: {color}; "
         f"border-radius: 9px; padding: {styles.SPACING_XS}px {styles.SPACING_SM}px; "

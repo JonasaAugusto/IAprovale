@@ -133,6 +133,35 @@ def test_refresh_theme_recomputes_chip_colors_on_theme_change(qtbot, monkeypatch
     assert "rgba(255, 255, 255, 0.08)" in dark_style
 
 
+def test_chip_text_color_is_explicit_not_native_palette(qtbot, monkeypatch):
+    """modo-noturno-bugado: non-accent chip text used to be
+    `color: palette(window-text)`, a QSS palette reference resolved
+    against the QApplication's native/OS-influenced QPalette — which
+    `qfluentwidgets.setTheme()` never touches — decoupling the chip's
+    text color from the app's own in-app theme selection (illegible
+    whenever the OS native theme and the in-app theme disagree). The
+    color must instead be an explicit value keyed on `isDarkTheme()`,
+    exactly like `bg` already was.
+    """
+    from app.ui import concurso_card as concurso_card_module
+
+    monkeypatch.setattr(concurso_card_module, "isDarkTheme", lambda: False)
+    concurso = _base_concurso(cargos=["Engenheiro"])
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+
+    light_style = _chip_widgets(card)[0].styleSheet()
+    assert "palette(" not in light_style
+    assert "color: black" in light_style
+
+    monkeypatch.setattr(concurso_card_module, "isDarkTheme", lambda: True)
+    card.refresh_theme()
+
+    dark_style = _chip_widgets(card)[0].styleSheet()
+    assert "palette(" not in dark_style
+    assert "color: white" in dark_style
+
+
 def test_card_sem_link_omite_botao_copiar_e_mostra_fallback(qtbot):
     concurso = _base_concurso(cargos=[], noticia={"link": ""})
     card = ConcursoCard(concurso)
