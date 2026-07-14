@@ -66,7 +66,7 @@ def gerar_pdf(
 
     # Cabeçalho
     pdf.set_font("Helvetica", "B", 16)
-    pdf.cell(text="Concurso Finder — Resultados da Busca", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(text="IAprovale — Resultados da Busca", new_x="LMARGIN", new_y="NEXT")
     pdf.ln(3)
 
     if query:

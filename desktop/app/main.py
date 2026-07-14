@@ -37,7 +37,9 @@ Wires every module built in Plans 01-06 into a runnable app:
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QStackedWidget, QVBoxLayout, QWidget
 
 from app import api_client, auth_store
@@ -45,6 +47,13 @@ from app.async_helpers import run_in_background
 from app.ui import styles
 from app.ui.login_page import LoginPage
 from app.ui.main_window import MainWindow
+
+# Titlebar/taskbar icon while the app is running — separate from both the
+# PDF/login logo (drawn at runtime from assets/logo.png) and the frozen
+# .exe's own file icon (baked in by PyInstaller at build time via
+# ConcursoFinder.spec's `icon=` — that one requires a rebuild to change).
+# Existence-checked so absence never raises (asset may not exist yet).
+_ICON_PATH = Path(__file__).parent / "assets" / "icon.ico"
 
 
 class _RootWindow(QWidget):
@@ -181,6 +190,8 @@ class _RootWindow(QWidget):
 
 def main() -> None:
     app = QApplication(sys.argv)
+    if _ICON_PATH.exists():
+        app.setWindowIcon(QIcon(str(_ICON_PATH)))
     window = _RootWindow()
     window.show()
     sys.exit(app.exec())

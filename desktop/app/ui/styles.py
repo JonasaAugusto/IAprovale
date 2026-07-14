@@ -25,7 +25,7 @@ from app.config import APP_DIR, THEME_FILE
 # --- Window geometry (05-UI-SPEC.md Window & Layout) ---
 WINDOW_SIZE = (900, 650)
 MIN_SIZE = (700, 500)
-TITLE = "Concurso Finder"
+TITLE = "IAprovale"
 
 # --- Theme names (new persisted values) ---
 THEME_LIGHT = "light"
@@ -46,6 +46,24 @@ COLOR_BADGE_BG = "#ffc107"  # NOVO badge background
 COLOR_BADGE_FG = "#3a2e00"  # NOVO badge text
 COLOR_DESTRUCTIVE_LIGHT = "#C42B1C"  # Desativar/Excluir, light theme
 COLOR_DESTRUCTIVE_DARK = "#FF99A4"  # Desativar/Excluir, dark theme
+
+# --- Plain-QLabel text color (bug fix, modo-noturno-bugado) ---
+# `qfluentwidgets.setTheme()` never touches the QApplication-level
+# QPalette (confirmed empirically: `app.palette().color(WindowText)` is
+# unchanged across `apply_theme(LIGHT)`/`apply_theme(DARK)` calls) — it is
+# purely a QSS-manager mechanism for widgets registered via
+# `FluentStyleSheet.apply()`. Any hand-built QSS on a plain `QLabel` that
+# references `palette(window-text)` therefore resolves against the
+# OS-native/Qt-default palette, NOT the app's in-app theme selection,
+# producing illegible text whenever the OS native theme and the in-app
+# selected theme disagree (e.g. OS in dark mode, app set to "light").
+# These values mirror the exact defaults `qfluentwidgets.FluentLabelBase`
+# already uses for every other label in the app (QColor(0, 0, 0) light /
+# QColor(255, 255, 255) dark — see `label.py::setTextColor`), so a plain
+# QLabel with an explicit color keyed on `isDarkTheme()` looks identical
+# to a real Fluent label in either theme.
+COLOR_TEXT_LIGHT = "black"
+COLOR_TEXT_DARK = "white"
 
 # --- Top-level window background (bug fix, modo-noturno-bugado) ---
 # qfluentwidgets' setTheme()/updateStyleSheet() only re-styles genuine

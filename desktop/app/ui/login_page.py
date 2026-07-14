@@ -83,7 +83,7 @@ class LoginPage(QWidget):
                 card_layout.addWidget(logo_label)
                 card_layout.addSpacing(styles.SPACING_MD)
 
-        card_layout.addWidget(TitleLabel("Concurso Finder", card))
+        card_layout.addWidget(TitleLabel("IAprovale", card))
         card_layout.addSpacing(styles.SPACING_LG)
 
         card_layout.addWidget(BodyLabel("Usuário", card))
