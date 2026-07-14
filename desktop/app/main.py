@@ -189,6 +189,22 @@ class _RootWindow(QWidget):
 
 
 def main() -> None:
+    if sys.platform == "win32":
+        # Without an explicit AppUserModelID, Windows can represent the
+        # taskbar button using the *host* python.exe's own icon when run
+        # unfrozen (dev mode) instead of the window icon set below — a
+        # well-known Windows taskbar quirk for interpreted GUI apps. The
+        # frozen .exe (PyInstaller) does not need this: it has its own
+        # process identity and bakes the icon in at build time.
+        import ctypes
+
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                "IAprovale.ConcursoFinder.Desktop.1"
+            )
+        except (AttributeError, OSError):
+            pass
+
     app = QApplication(sys.argv)
     if _ICON_PATH.exists():
         app.setWindowIcon(QIcon(str(_ICON_PATH)))
