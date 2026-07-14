@@ -172,6 +172,7 @@ class BuscaTab(QWidget):
         self._pdf_path: Path | None = None
         self._resultados: list[dict] = []
         self._query_str: str = ""
+        self._extracted_summary: str | None = None
         self._error_bar: InfoBar | None = None
 
         layout = QVBoxLayout(self)
@@ -290,6 +291,7 @@ class BuscaTab(QWidget):
 
         self._resultados = response.get("results", [])
         self._query_str = self._query_entry.text()
+        self._extracted_summary = response.get("extracted_summary")
 
         self._btn_gerar_pdf.setEnabled(bool(self._resultados))
 
@@ -378,7 +380,7 @@ class BuscaTab(QWidget):
         from app.pdf_export import gerar_pdf
         from app.config import APP_DIR
 
-        pdf_bytes = gerar_pdf(self._resultados, self._query_str)
+        pdf_bytes = gerar_pdf(self._resultados, self._query_str, self._extracted_summary)
         APP_DIR.mkdir(parents=True, exist_ok=True)
         pdf_path = APP_DIR / "resultados.pdf"
         pdf_path.write_bytes(pdf_bytes)

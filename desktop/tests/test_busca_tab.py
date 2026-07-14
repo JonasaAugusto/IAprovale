@@ -145,7 +145,8 @@ def test_gerar_pdf_writes_file_and_shows_pdf_row(qtbot, tab, captured, monkeypat
     from app.ui import busca_tab as module
 
     monkeypatch.setattr(
-        "app.pdf_export.gerar_pdf", lambda resultados, query: b"%PDF-1.4 test"
+        "app.pdf_export.gerar_pdf",
+        lambda resultados, query, extracted_summary=None: b"%PDF-1.4 test",
     )
     monkeypatch.setattr("app.config.APP_DIR", tmp_path)
 
@@ -204,7 +205,8 @@ def test_refresh_theme_is_a_noop_with_no_results(qtbot, tab):
 
 def test_apagar_pdf_removes_file_and_hides_row(qtbot, tab, monkeypatch, tmp_path):
     monkeypatch.setattr(
-        "app.pdf_export.gerar_pdf", lambda resultados, query: b"%PDF-1.4 test"
+        "app.pdf_export.gerar_pdf",
+        lambda resultados, query, extracted_summary=None: b"%PDF-1.4 test",
     )
     monkeypatch.setattr("app.config.APP_DIR", tmp_path)
 

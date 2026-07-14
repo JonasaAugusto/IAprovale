@@ -4,7 +4,116 @@ These tests are purely unit-level: no Tk instance required, no filesystem
 writes — gerar_pdf() returns bytes that are validated in-memory.
 """
 
-from app.pdf_export import gerar_pdf
+import re
+import zlib
+
+from app.pdf_export import _ordenar_novos_primeiro, gerar_pdf
+
+
+def _decoded_content_streams(pdf_bytes: bytes) -> bytes:
+    """fpdf2 FlateDecode-compresses page content streams by default, so
+    visible text (drawn via Tj/TJ operators) isn't found via a plain
+    substring search on the raw bytes — decompress every `stream`...
+    `endstream` block and concatenate the ones that inflate cleanly
+    (skips binary streams like fonts/images that aren't zlib-compressed
+    text)."""
+    decoded = bytearray()
+    for match in re.finditer(rb"stream\r?\n(.*?)endstream", pdf_bytes, re.DOTALL):
+        raw = match.group(1)
+        try:
+            decoded += zlib.decompress(raw)
+        except zlib.error:
+            continue
+    return bytes(decoded)
+
+
+def test_ordenar_novos_primeiro_estavel():
+    """NOVO/is_new concursos vem primeiro, preservando ordem relativa dentro
+    de cada grupo (sort estável) — mesmo quando um não-novo vem antes."""
+    resultados = [
+        {"titulo": "Antigo A", "is_new": False},
+        {"titulo": "Novo A", "is_new": True},
+        {"titulo": "Antigo B", "is_new": False},
+        {"titulo": "Novo B", "is_new": True},
+    ]
+    ordenado = _ordenar_novos_primeiro(resultados)
+    assert [c["titulo"] for c in ordenado] == ["Novo A", "Novo B", "Antigo A", "Antigo B"]
+
+
+def test_gerar_pdf_ordena_novos_primeiro():
+    """O PDF renderizado lista NOVO antes do não-novo, mesmo com a entrada
+    na ordem inversa (verificado via posição do título no texto extraído)."""
+    resultado = [
+        {
+            "titulo": "Antigo",
+            "cargos": [],
+            "datas": {"fim": "sem data"},
+            "noticia": {"link": ""},
+            "is_new": False,
+        },
+        {
+            "titulo": "Novo",
+            "cargos": [],
+            "datas": {"fim": "sem data"},
+            "noticia": {"link": ""},
+            "is_new": True,
+        },
+    ]
+    decoded = _decoded_content_streams(gerar_pdf(resultado, ""))
+    # A ordem impressa é "1. Novo" antes de "2. Antigo".
+    assert b"1. Novo" in decoded
+    assert decoded.index(b"1. Novo") < decoded.index(b"2. Antigo")
+
+
+def test_gerar_pdf_mostra_ia_entendeu_quando_summary_presente():
+    """Quando extracted_summary é fornecido, o cabeçalho mostra o rótulo
+    'A IA entendeu:' — quando ausente, o rótulo não aparece."""
+    resultado = [
+        {
+            "titulo": "Concurso X",
+            "cargos": [],
+            "datas": {"fim": "sem data"},
+            "noticia": {"link": ""},
+            "is_new": False,
+        }
+    ]
+    com_summary = _decoded_content_streams(
+        gerar_pdf(resultado, "busca", "Pesquisa por 'enfermagem' em SP")
+    )
+    assert b"A IA entendeu" in com_summary
+
+    sem_summary = _decoded_content_streams(gerar_pdf(resultado, "busca"))
+    assert b"A IA entendeu" not in sem_summary
+
+
+def test_gerar_pdf_link_nao_expoe_url_crua():
+    """O link é impresso como um rótulo curto e clicável, nunca a URL crua
+    (evita overflow da margem no PDF)."""
+    url = "https://www.pciconcursos.com.br/noticias/algum-concurso-bem-especifico-aqui-2026"
+    resultado = [
+        {
+            "titulo": "Concurso Y",
+            "cargos": [],
+            "datas": {"fim": "sem data"},
+            "noticia": {"link": url},
+            "is_new": False,
+        }
+    ]
+    # The raw URL legitimately appears once in the PDF's link ANNOTATION
+    # (the /URI action needed for the link to be clickable) — but the
+    # VISIBLE TEXT (content stream) must show only the short label, never
+    # the raw URL overflowing the margin.
+    decoded = _decoded_content_streams(gerar_pdf(resultado, ""))
+    assert url.encode() not in decoded
+    assert "Ver notícia completa".encode("windows-1252") in decoded
+
+
+def test_gerar_pdf_signature_aceita_extracted_summary_opcional():
+    """A nova assinatura mantém extracted_summary opcional — chamadas
+    existentes com 2 argumentos posicionais continuam funcionando."""
+    result = gerar_pdf([], "busca")
+    assert isinstance(result, bytes)
+    assert result[:4] == b"%PDF"
 
 
 def test_gerar_pdf_retorna_bytes():

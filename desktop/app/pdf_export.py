@@ -15,16 +15,32 @@ profile file which is unnecessary for this app.
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 
 from fpdf import FPDF
 
+# Accent color (matches desktop/app/ui/styles.ACCENT = "#0078D4").
+_ACCENT_RGB = (0, 120, 212)
 
-def gerar_pdf(resultados: list[dict], query: str = "") -> bytes:
+_ASSETS_DIR = Path(__file__).parent / "assets"
+_LOGO_PATH = _ASSETS_DIR / "logo.png"
+
+
+def _ordenar_novos_primeiro(resultados: list[dict]) -> list[dict]:
+    """Retorna resultados reordenados com is_new=True primeiro, preservando
+    a ordem relativa dentro de cada grupo (sort estável)."""
+    return sorted(resultados, key=lambda c: not c.get("is_new"))
+
+
+def gerar_pdf(
+    resultados: list[dict], query: str = "", extracted_summary: str | None = None
+) -> bytes:
     """Gera PDF dos resultados de busca. Retorna bytes prontos para gravar em arquivo.
 
     Args:
-        resultados: Lista de dicts de concurso no formato do backend.
-        query:      String de busca original do usuário (aparece no cabeçalho).
+        resultados:        Lista de dicts de concurso no formato do backend.
+        query:              String de busca original do usuário (aparece no cabeçalho).
+        extracted_summary: O que a IA entendeu da busca (opcional, aparece no cabeçalho).
 
     Returns:
         Bytes do PDF gerado (começa com b"%PDF").
@@ -36,6 +52,18 @@ def gerar_pdf(resultados: list[dict], query: str = "") -> bytes:
     pdf.set_margins(15, 15, 15)
     pdf.add_page()
 
+    # Barra de destaque (cor de acento) no topo do cabeçalho.
+    pdf.set_fill_color(*_ACCENT_RGB)
+    pdf.rect(0, 0, 210, 6, style="F")
+    pdf.set_y(12)
+
+    # Logo opcional — desenhada apenas se o arquivo existir; ausência nunca levanta erro.
+    if _LOGO_PATH.exists():
+        pdf.image(str(_LOGO_PATH), x=15, y=pdf.get_y(), h=12)
+        pdf.set_xy(32, pdf.get_y())
+    else:
+        pdf.set_x(15)
+
     # Cabeçalho
     pdf.set_font("Helvetica", "B", 16)
     pdf.cell(text="Concurso Finder — Resultados da Busca", new_x="LMARGIN", new_y="NEXT")
@@ -45,7 +73,13 @@ def gerar_pdf(resultados: list[dict], query: str = "") -> bytes:
         pdf.set_font("Helvetica", "", 10)
         pdf.cell(text=f"Busca: {query}", new_x="LMARGIN", new_y="NEXT")
 
-    pdf.set_font("Helvetica", "", 10)
+    if extracted_summary:
+        pdf.set_font("Helvetica", "I", 10)
+        pdf.cell(
+            text=f"A IA entendeu: {extracted_summary}", new_x="LMARGIN", new_y="NEXT"
+        )
+        pdf.set_font("Helvetica", "", 10)
+
     pdf.cell(
         text=f"Gerado em: {date.today().strftime('%d/%m/%Y')}",
         new_x="LMARGIN",
@@ -58,7 +92,7 @@ def gerar_pdf(resultados: list[dict], query: str = "") -> bytes:
     pdf.line(15, pdf.get_y(), 195, pdf.get_y())
     pdf.ln(5)
 
-    for i, c in enumerate(resultados, 1):
+    for i, c in enumerate(_ordenar_novos_primeiro(resultados), 1):
         titulo = c.get("titulo", "Sem título")
         cargos_list = c.get("cargos", [])
         prazo = c.get("datas", {}).get("fim", "não informado")
@@ -109,11 +143,12 @@ def gerar_pdf(resultados: list[dict], query: str = "") -> bytes:
 
         pdf.ln(2)
 
-        # Link como linha secundária/meta abaixo do card
+        # Link como linha secundária/meta abaixo do card — rótulo curto e
+        # clicável, nunca a URL crua (evita overflow da margem, ENTREGA-01).
         if link:
             pdf.set_font("Helvetica", "", 9)
             pdf.set_text_color(0, 0, 200)
-            pdf.cell(text=link, new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(text="Ver notícia completa ->", link=link, new_x="LMARGIN", new_y="NEXT")
             pdf.set_text_color(0, 0, 0)
 
         pdf.ln(5)
