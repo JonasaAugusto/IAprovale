@@ -83,7 +83,9 @@ class LoginPage(QWidget):
                 card_layout.addWidget(logo_label)
                 card_layout.addSpacing(styles.SPACING_MD)
 
-        card_layout.addWidget(TitleLabel("IAprovale", card))
+        title_label = TitleLabel("IAprovale", card)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        card_layout.addWidget(title_label)
         card_layout.addSpacing(styles.SPACING_LG)
 
         card_layout.addWidget(BodyLabel("Usuário", card))
