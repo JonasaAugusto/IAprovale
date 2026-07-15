@@ -18,7 +18,8 @@ from dataclasses import dataclass
 
 import pytest
 
-from app import auth_store
+from app import api_client, auth_store
+from app import main as main_module
 from app.main import _RootWindow
 from app.ui import styles
 
@@ -90,3 +91,46 @@ def test_toggle_theme_flips_and_persists_theme(qtbot, root, monkeypatch):
     expected = styles.THEME_LIGHT if starting_theme == styles.THEME_DARK else styles.THEME_DARK
     assert root._theme == expected
     assert persisted == [expected]
+
+
+# --- T-04/T-05: auto-login error handling ---
+
+
+def _make_root_with_saved_session(qtbot, monkeypatch):
+    """Build a _RootWindow whose auto-login finds a saved session, capturing
+    the run_in_background on_error callback instead of hitting the network."""
+    captured = {}
+
+    def _fake_bg(fn, on_success, on_error):
+        captured["on_success"] = on_success
+        captured["on_error"] = on_error
+
+    monkeypatch.setattr(auth_store, "load_session", lambda: _FakeSession())
+    monkeypatch.setattr(styles, "save_theme_pref", lambda _n: None)
+    monkeypatch.setattr(main_module, "run_in_background", _fake_bg)
+    window = _RootWindow()
+    qtbot.addWidget(window)
+    return window, captured
+
+
+def test_auto_login_network_error_keeps_session(qtbot, monkeypatch):
+    """T-04: a connection/timeout failure during startup auto-login must NOT
+    clear the saved session — only fall back to the login screen."""
+    cleared = []
+    monkeypatch.setattr(auth_store, "clear_session", lambda: cleared.append(True))
+    _window, captured = _make_root_with_saved_session(qtbot, monkeypatch)
+
+    captured["on_error"](api_client.ConnectionFailedError("sem internet"))
+
+    assert cleared == []  # session preserved for a later, connected launch
+
+
+def test_auto_login_session_expired_clears_session(qtbot, monkeypatch):
+    """T-04: a real 401 (SessionExpiredError) DOES clear the saved session."""
+    cleared = []
+    monkeypatch.setattr(auth_store, "clear_session", lambda: cleared.append(True))
+    _window, captured = _make_root_with_saved_session(qtbot, monkeypatch)
+
+    captured["on_error"](api_client.SessionExpiredError("expirada"))
+
+    assert cleared == [True]

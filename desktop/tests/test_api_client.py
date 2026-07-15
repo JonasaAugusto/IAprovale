@@ -73,6 +73,25 @@ def test_detail_passthrough_verbatim(fake_response):
     assert exc_info.value.detail == detail
 
 
+def test_non_json_5xx_body_yields_friendly_message(fake_response):
+    """T-03: a 5xx with an HTML body (Render cold start / proxy error) must
+    produce a legible PT-BR message, never a raw 'Expecting value...' string."""
+    resp = fake_response(status_code=502, non_json=True)
+    with pytest.raises(api_client.SearchFailedError) as exc_info:
+        api_client._raise_for_status(resp)
+    assert "servidor" in exc_info.value.detail.lower()
+    assert "Expecting value" not in exc_info.value.detail
+
+
+def test_non_json_4xx_body_yields_generic_message(fake_response):
+    """T-03: a non-JSON 4xx (unexpected) still yields a clean PT-BR fallback."""
+    resp = fake_response(status_code=404, non_json=True)
+    with pytest.raises(api_client.NotFoundError) as exc_info:
+        api_client._raise_for_status(resp)
+    assert "Expecting value" not in exc_info.value.detail
+    assert exc_info.value.detail.strip() != ""
+
+
 # ---------------------------------------------------------------------------
 # Task 2: request methods (auth, profile, search, admin) with token +
 # connection handling

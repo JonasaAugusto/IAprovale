@@ -69,14 +69,16 @@ def gerar_pdf(
     pdf.cell(text="IAprovale — Resultados da Busca", new_x="LMARGIN", new_y="NEXT")
     pdf.ln(3)
 
+    # multi_cell (not cell) so a long query/summary wraps instead of running
+    # off the right margin (same overflow class as the raw-URL bug fixed earlier).
     if query:
         pdf.set_font("Helvetica", "", 10)
-        pdf.cell(text=f"Busca: {query}", new_x="LMARGIN", new_y="NEXT")
+        pdf.multi_cell(0, 5, f"Busca: {query}", new_x="LMARGIN", new_y="NEXT")
 
     if extracted_summary:
         pdf.set_font("Helvetica", "I", 10)
-        pdf.cell(
-            text=f"A IA entendeu: {extracted_summary}", new_x="LMARGIN", new_y="NEXT"
+        pdf.multi_cell(
+            0, 5, f"A IA entendeu: {extracted_summary}", new_x="LMARGIN", new_y="NEXT"
         )
         pdf.set_font("Helvetica", "", 10)
 

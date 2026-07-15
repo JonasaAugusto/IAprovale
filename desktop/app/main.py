@@ -39,6 +39,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QStackedWidget, QVBoxLayout, QWidget
 
@@ -68,6 +69,30 @@ else:
     _APP_DIR = Path(__file__).parent
 
 _ICON_PATH = _APP_DIR / "assets" / "icon.ico"
+
+
+class _ConnectingPage(QWidget):
+    """Transient centered "Conectando ao servidor..." state shown while the
+    startup auto-login validates the saved token (T-05) — avoids a blank
+    window during Render's cold-start wait. Uses lazy imports of qfluentwidgets
+    widgets to keep them out of module import time.
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        from qfluentwidgets import BodyLabel, IndeterminateProgressBar
+
+        layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setSpacing(styles.SPACING_MD)
+
+        label = BodyLabel("Conectando ao servidor...", self)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        bar = IndeterminateProgressBar(self)
+        bar.setFixedWidth(220)
+
+        layout.addWidget(label, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(bar, alignment=Qt.AlignmentFlag.AlignCenter)
 
 
 class _RootWindow(QWidget):
@@ -187,11 +212,21 @@ class _RootWindow(QWidget):
             self._show_login()
             return
 
+        # Show a "connecting" state instead of a blank window while GET /profile
+        # validates the saved token — this can take 30-60s on a Render free-tier
+        # cold start (T-05), during which the window would otherwise be empty.
+        self._swap(_ConnectingPage())
+
         def _on_startup_valid(_profile) -> None:
             self._show_main(session)  # token still valid — skip login entirely
 
-        def _on_startup_invalid(_exc) -> None:
-            auth_store.clear_session()
+        def _on_startup_invalid(exc) -> None:
+            # Only a real 401 (SessionExpiredError) means the token is dead —
+            # clear it. A network/timeout failure must NOT destroy the saved
+            # session (T-04): keep it so a later launch with connectivity still
+            # auto-logs-in; just fall back to the login screen for now.
+            if isinstance(exc, api_client.SessionExpiredError):
+                auth_store.clear_session()
             self._show_login()
 
         api_client.set_token(session.token)

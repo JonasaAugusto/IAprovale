@@ -140,6 +140,26 @@ def test_gerar_pdf_lista_vazia():
     assert result[:4] == b"%PDF"
 
 
+def test_gerar_pdf_query_e_summary_longos_nao_estouram(monkeypatch):
+    """T-07: uma query e um resumo muito longos devem quebrar em várias linhas
+    (multi_cell), não estourar a margem — antes usavam cell() e saíam da
+    página. Gerar não pode levantar exceção com texto longo."""
+    query_longa = "concurso " * 60  # ~480 chars, bem além da largura da página
+    summary_longo = "Pesquisa por 'engenharia de software e áreas correlatas' " * 5
+    resultado = [
+        {
+            "titulo": "Concurso Z",
+            "cargos": [],
+            "datas": {"fim": "sem data"},
+            "noticia": {"link": ""},
+            "is_new": False,
+        }
+    ]
+    result = gerar_pdf(resultado, query_longa, summary_longo)
+    assert isinstance(result, bytes)
+    assert result[:4] == b"%PDF"
+
+
 def test_gerar_pdf_ptbr_chars():
     """gerar_pdf com caracteres PT-BR não levanta UnicodeEncodeError."""
     resultado = [

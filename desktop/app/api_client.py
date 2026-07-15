@@ -98,9 +98,23 @@ def _raise_for_status(resp: requests.Response) -> None:
     if resp.ok:
         return
 
+    # The backend's own errors are JSON with a PT-BR `detail`. But the most
+    # common production error — a Render free-tier cold start / proxy 5xx —
+    # returns an HTML body, so resp.json() raises. Fall back to a status-based
+    # PT-BR message instead of leaking a raw "Expecting value: line 1..." to
+    # the user (T-03).
     detail = "Erro desconhecido"
     if resp.content:
-        detail = resp.json().get("detail", "Erro desconhecido")
+        try:
+            detail = resp.json().get("detail", "Erro desconhecido")
+        except ValueError:
+            if resp.status_code >= 500:
+                detail = (
+                    "O servidor está iniciando ou instável no momento. "
+                    "Aguarde alguns segundos e tente novamente."
+                )
+            else:
+                detail = "Não foi possível completar a operação. Tente novamente."
 
     if resp.status_code == 423:
         raise AccountLockedError(detail)
