@@ -39,7 +39,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QStackedWidget, QVBoxLayout, QWidget
 
@@ -129,6 +129,16 @@ class _RootWindow(QWidget):
         self._session: auth_store.Session | None = None
         self._main_window: MainWindow | None = None
 
+        # Reconnect timer for startup auto-login: on a network/cold-start
+        # failure the app stays on the "Conectando..." screen and retries,
+        # only leaving it once actually connected (or on a real 401). Child of
+        # this widget, so it is destroyed with the window (never fires late).
+        self._pending_session: auth_store.Session | None = None
+        self._reconnect_timer = QTimer(self)
+        self._reconnect_timer.setSingleShot(True)
+        self._reconnect_timer.setInterval(3000)
+        self._reconnect_timer.timeout.connect(self._attempt_auto_login)
+
         self._try_auto_login()
 
     # ------------------------------------------------------------------
@@ -207,34 +217,40 @@ class _RootWindow(QWidget):
     # ------------------------------------------------------------------
 
     def _try_auto_login(self) -> None:
-        session = auth_store.load_session()
-        if session is None:
+        self._pending_session = auth_store.load_session()
+        if self._pending_session is None:
             self._show_login()
             return
 
         # Show a "connecting" state instead of a blank window while GET /profile
         # validates the saved token — this can take 30-60s on a Render free-tier
         # cold start (T-05), during which the window would otherwise be empty.
+        # The app STAYS on this screen until it actually connects (see
+        # _on_startup_invalid) — it never shows login/main while disconnected.
         self._swap(_ConnectingPage())
+        api_client.set_token(self._pending_session.token)
+        self._attempt_auto_login()
 
-        def _on_startup_valid(_profile) -> None:
-            self._show_main(session)  # token still valid — skip login entirely
-
-        def _on_startup_invalid(exc) -> None:
-            # Only a real 401 (SessionExpiredError) means the token is dead —
-            # clear it. A network/timeout failure must NOT destroy the saved
-            # session (T-04): keep it so a later launch with connectivity still
-            # auto-logs-in; just fall back to the login screen for now.
-            if isinstance(exc, api_client.SessionExpiredError):
-                auth_store.clear_session()
-            self._show_login()
-
-        api_client.set_token(session.token)
+    def _attempt_auto_login(self) -> None:
         run_in_background(
             api_client.get_profile,
-            on_success=_on_startup_valid,
-            on_error=_on_startup_invalid,
+            on_success=self._on_startup_valid,
+            on_error=self._on_startup_invalid,
         )
+
+    def _on_startup_valid(self, _profile) -> None:
+        self._show_main(self._pending_session)  # token valid — skip login
+
+    def _on_startup_invalid(self, exc) -> None:
+        # A real 401 (SessionExpiredError) means the saved token is dead: clear
+        # it and fall back to login. A network/timeout/cold-start failure must
+        # NOT leave the "Conectando..." screen — keep retrying until the server
+        # answers, so the app only leaves this screen once truly connected.
+        if isinstance(exc, api_client.SessionExpiredError):
+            auth_store.clear_session()
+            self._show_login()
+            return
+        self._reconnect_timer.start()
 
 
 def main() -> None:

@@ -28,12 +28,17 @@ qfl_datas, qfl_binaries, qfl_hidden = collect_all("qframelesswindow")
 # (evita SSLError em maquina limpa por CA roots ausentes — T-05-SSL).
 certifi_datas = collect_data_files("certifi")
 
+# pypdf (v1.2.0): extracao de texto do curriculo. Import preguicoso dentro de
+# app/curriculo.py — collect_all garante que o pacote inteiro va pro .exe
+# mesmo que a analise estatica nao pegue o import interno.
+pypdf_datas, pypdf_binaries, pypdf_hidden = collect_all("pypdf")
+
 a = Analysis(
     ["app/main.py"],
     pathex=["."],
-    binaries=qfw_binaries + qfl_binaries,
-    datas=qfw_datas + qfl_datas + certifi_datas + _assets_datas,
-    hiddenimports=qfw_hidden + qfl_hidden,
+    binaries=qfw_binaries + qfl_binaries + pypdf_binaries,
+    datas=qfw_datas + qfl_datas + certifi_datas + _assets_datas + pypdf_datas,
+    hiddenimports=qfw_hidden + qfl_hidden + pypdf_hidden,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

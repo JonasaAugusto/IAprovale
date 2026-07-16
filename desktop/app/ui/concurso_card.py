@@ -36,6 +36,16 @@ _COPIED_TEXT = "Copiado!"
 _COPIED_FEEDBACK_MS = 1500
 
 
+def _fmt_localizacao(concurso: dict) -> str:
+    """UF + região do concurso -> "MG · Sudeste" (ou só o que existir). Vazio
+    se o MCP não trouxer nenhum dos dois."""
+    uf = (concurso.get("uf") or "").strip().upper()
+    regiao = (concurso.get("regiao") or "").strip().title()
+    if uf and regiao:
+        return f"{uf} · {regiao}"
+    return uf or regiao or ""
+
+
 def _chip_qss(*, accent: bool) -> str:
     bg = "rgba(255, 255, 255, 0.08)" if isDarkTheme() else "rgba(0, 0, 0, 0.06)"
     if accent:
@@ -78,8 +88,15 @@ class ConcursoCard(CardWidget):
 
         is_new = bool(concurso.get("is_new"))
         titulo = concurso["titulo"]
-        self._cargos = list(concurso.get("cargos", []))
+        # Só os cargos compatíveis com o perfil/busca (backend anota
+        # `cargos_compativeis`); fallback para a lista completa quando ausente
+        # (ex: backend antigo, ou concurso sem match anotado).
+        self._cargos = list(
+            concurso.get("cargos_compativeis") or concurso.get("cargos", [])
+        )
+        self._cargos_filtrados = bool(concurso.get("cargos_compativeis"))
         prazo = concurso.get("datas", {}).get("fim", "não informado")
+        localizacao = _fmt_localizacao(concurso)
         link = concurso.get("noticia", {}).get("link", "")
         self._expanded = False
 
@@ -96,6 +113,15 @@ class ConcursoCard(CardWidget):
         if is_new:
             title_row.addWidget(self._make_novo_badge(), 0, Qt.AlignmentFlag.AlignTop)
         layout.addLayout(title_row)
+
+        # Localização (uf · região) — só quando o MCP traz o dado.
+        if localizacao:
+            layout.addWidget(CaptionLabel(f"Localização: {localizacao}", self))
+
+        # Cargos: rótulo deixa claro que são só os compatíveis (quando anotados).
+        if self._cargos:
+            rotulo = "Cargos compatíveis:" if self._cargos_filtrados else "Cargos:"
+            layout.addWidget(CaptionLabel(rotulo, self))
 
         chip_host = QWidget(self)
         self._chip_flow = FlowLayout(chip_host)

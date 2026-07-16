@@ -21,11 +21,21 @@ Admin-tab visibility here is UX only (T-05-ADMINGATE) — the backend's
 from __future__ import annotations
 
 from PySide6.QtWidgets import QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
-from qfluentwidgets import FluentIcon as FIF, Pivot, PushButton, TransparentToolButton
+from qfluentwidgets import (
+    FluentIcon as FIF,
+    InfoBar,
+    InfoBarPosition,
+    Pivot,
+    PushButton,
+    TransparentToolButton,
+)
 
+from app import api_client
+from app.async_helpers import run_in_background
 from app.ui import styles
 from app.ui.admin_tab import AdminTab
 from app.ui.busca_tab import BuscaTab
+from app.ui.perfil_dialog import PerfilDialog
 
 _BUSCA_ROUTE = "Busca"
 _ADMIN_ROUTE = "Admin"
@@ -66,6 +76,11 @@ class MainWindow(QWidget):
         self._theme_button.clicked.connect(on_toggle_theme)
         header.addWidget(self._theme_button)
 
+        # "Perfil" — disponível para QUALQUER usuário logado (não admin-only).
+        self._perfil_button = PushButton("Perfil", self)
+        self._perfil_button.clicked.connect(self._on_perfil_click)
+        header.addWidget(self._perfil_button)
+
         self._sair_button = PushButton("Sair", self)
         self._sair_button.clicked.connect(on_logout)
         header.addWidget(self._sair_button)
@@ -99,6 +114,49 @@ class MainWindow(QWidget):
         layout.addWidget(self._stack, 1)
 
         self._pivot.setCurrentItem(_BUSCA_ROUTE)
+
+    # --- Perfil (botão no header) ---------------------------------------
+
+    def _on_perfil_click(self) -> None:
+        """Busca o perfil atual (off-thread) e então abre o diálogo. Desabilita
+        o botão enquanto carrega para evitar diálogos duplicados."""
+        self._perfil_button.setEnabled(False)
+        run_in_background(
+            lambda: api_client.get_profile(),
+            self._open_perfil_dialog,
+            self._on_perfil_error,
+        )
+
+    def _open_perfil_dialog(self, perfil: dict) -> None:
+        self._perfil_button.setEnabled(True)
+        dialog = PerfilDialog(perfil, parent=self.window())
+        if not dialog.exec():
+            return
+        campos = dialog.coletar()
+        run_in_background(
+            lambda: api_client.update_profile(campos),
+            self._on_perfil_saved,
+            self._on_perfil_error,
+        )
+
+    def _on_perfil_saved(self, _perfil: dict) -> None:
+        InfoBar.success(
+            title="",
+            content="Perfil salvo.",
+            duration=3000,
+            position=InfoBarPosition.TOP,
+            parent=self,
+        )
+
+    def _on_perfil_error(self, exc: Exception) -> None:
+        self._perfil_button.setEnabled(True)
+        InfoBar.error(
+            title="",
+            content=getattr(exc, "detail", str(exc)),
+            duration=-1,
+            position=InfoBarPosition.TOP,
+            parent=self,
+        )
 
     def refresh_theme(self) -> None:
         """Re-style child widgets that don't auto-update via qfluentwidgets'

@@ -199,13 +199,29 @@ def logout() -> None:
 
 
 def get_profile() -> dict:
-    """GET /profile -> {graduacao, tecnico, updated_at}."""
+    """GET /profile -> perfil completo (graduacao, tecnico, pos_graduacao,
+    escolaridade, formacao_futura, uf, cidade, mobilidade, areas_interesse,
+    experiencia, curriculo, updated_at). Campos nunca preenchidos vêm None."""
     return _request("GET", "/profile", auth=True)
+
+
+def update_profile(campos: dict) -> dict:
+    """PUT /profile -> perfil atualizado. `campos` carrega só os campos de
+    perfil (graduacao, tecnico, ... , curriculo); o backend valida e faz
+    upsert. Devolve o perfil salvo (mesmo shape de get_profile)."""
+    return _request("PUT", "/profile", json_body=campos, auth=True)
 
 
 def search(query: str) -> dict:
     """POST /search -> {results, count, is_empty, message}."""
     return _request("POST", "/search", json_body={"query": query}, auth=True)
+
+
+def lookup_cep(cep: str) -> dict:
+    """GET /cep/{cep} -> {cep, cidade, uf, bairro, logradouro}. O backend faz
+    o proxy para a ViaCEP (o desktop nunca chama a ViaCEP direto). Timeout
+    curto — é uma consulta leve, não uma busca de concursos."""
+    return _request("GET", f"/cep/{cep}", auth=True, timeout=15)
 
 
 def list_users() -> list[dict]:

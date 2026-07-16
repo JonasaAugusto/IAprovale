@@ -73,6 +73,42 @@ def test_oito_cargos_colapsa_em_cinco_com_overflow_expansivel(qtbot):
     assert widgets[-1].text() == "+3 outros"
 
 
+def test_usa_cargos_compativeis_quando_presente(qtbot):
+    """v1.2.0: quando o backend anota cargos_compativeis, o card mostra SÓ
+    esses (não a lista completa de cargos do concurso)."""
+    concurso = _base_concurso(
+        cargos=["Enfermeiro", "Motorista", "Contador"],
+        cargos_compativeis=["Enfermeiro"],
+    )
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+    assert _chip_texts(card) == ["Enfermeiro"]
+
+
+def test_fallback_para_todos_os_cargos_sem_anotacao(qtbot):
+    """Sem cargos_compativeis (backend antigo), cai para a lista completa."""
+    concurso = _base_concurso(cargos=["Enfermeiro", "Motorista"])
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+    assert _chip_texts(card) == ["Enfermeiro", "Motorista"]
+
+
+def test_localizacao_aparece_quando_uf_e_regiao(qtbot):
+    concurso = _base_concurso(cargos=["Enfermeiro"], uf="MG", regiao="SUDESTE")
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+    labels = [w.text() for w in card.findChildren(QLabel)]
+    assert any("Localização: MG · Sudeste" == t for t in labels)
+
+
+def test_sem_localizacao_nao_mostra_secao(qtbot):
+    concurso = _base_concurso(cargos=["Enfermeiro"])  # sem uf/regiao
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+    labels = [w.text() for w in card.findChildren(QLabel)]
+    assert not any(t.startswith("Localização:") for t in labels)
+
+
 def test_copiar_link_seta_clipboard_e_mostra_feedback(qtbot, monkeypatch):
     concurso = _base_concurso(cargos=[])
     card = ConcursoCard(concurso)

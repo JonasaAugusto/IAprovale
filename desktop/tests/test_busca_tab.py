@@ -77,6 +77,31 @@ def test_button_disabled_and_progress_shown_during_search(qtbot, tab, captured):
     assert tab._status_label.text() == BuscaTab.LOADING_TEXT
 
 
+def test_buscar_com_perfil_vazio_usa_query_de_perfil(qtbot, tab, captured):
+    tab._query_entry.setText("")
+    tab._start_search_perfil()
+
+    assert captured.calls == 1
+    assert tab._query_str == BuscaTab._PERFIL_QUERY
+    assert tab._buscar_button.isEnabled() is False
+    assert tab._buscar_perfil_button.isEnabled() is False
+
+
+def test_buscar_com_perfil_com_texto_usa_o_texto_digitado(qtbot, tab, captured):
+    tab._query_entry.setText("Recife")
+    tab._start_search_perfil()
+
+    assert tab._query_str == "Recife"
+
+
+def test_ambos_botoes_de_busca_reabilitam_apos_sucesso(qtbot, tab, captured):
+    tab._start_search_perfil()
+    captured.on_success({"results": [], "count": 0, "is_empty": True, "message": None})
+
+    assert tab._buscar_button.isEnabled() is True
+    assert tab._buscar_perfil_button.isEnabled() is True
+
+
 def test_success_renders_cards_and_enables_pdf_and_reenables_buscar(qtbot, tab, captured):
     tab._query_entry.setText("concurso na área de saúde")
     tab._start_search()

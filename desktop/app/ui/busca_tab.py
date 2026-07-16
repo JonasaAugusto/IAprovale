@@ -54,7 +54,7 @@ from qfluentwidgets import (
     SearchLineEdit,
     SmoothScrollArea,
     StrongBodyLabel,
-    TransparentToolButton,
+    TransparentPushButton,
 )
 
 from app import api_client
@@ -193,17 +193,38 @@ class BuscaTab(QWidget):
         self._buscar_button.clicked.connect(self._start_search)
         query_row.addWidget(self._buscar_button)
 
-        self._btn_gerar_pdf = PushButton("Gerar PDF", self)
-        self._btn_gerar_pdf.setEnabled(False)
-        self._btn_gerar_pdf.clicked.connect(self._gerar_pdf)
-        query_row.addWidget(self._btn_gerar_pdf)
-
-        self._help_button = TransparentToolButton(FIF.HELP, self)
-        self._help_button.setToolTip("Como pesquisar")
-        self._help_button.clicked.connect(self._mostrar_ajuda)
-        query_row.addWidget(self._help_button)
+        # Busca guiada pelo perfil: pode deixar a caixa vazia (procura "na minha
+        # área") ou digitar só o que muda (localização/cargo). A IA completa o
+        # resto com o seu perfil. Ícone de pessoa reforça a ideia visualmente.
+        self._buscar_perfil_button = PushButton(FIF.PEOPLE, "Buscar com meu perfil", self)
+        self._buscar_perfil_button.setToolTip(
+            "Busca com base no seu perfil. Pode deixar a caixa vazia, ou digitar "
+            "só a localização/cargo — o resto a IA usa do seu perfil."
+        )
+        self._buscar_perfil_button.clicked.connect(self._start_search_perfil)
+        query_row.addWidget(self._buscar_perfil_button)
 
         layout.addLayout(query_row)
+
+        # Linha de ações secundárias: ajuda (esquerda) + Gerar PDF (direita,
+        # habilitado após uma busca com resultados). Tira o excesso de botões da
+        # linha de busca, deixando-a limpa.
+        actions_row = QHBoxLayout()
+        actions_row.setContentsMargins(0, 0, 0, 0)
+        actions_row.setSpacing(styles.SPACING_SM)
+
+        self._help_button = TransparentPushButton(FIF.HELP, "Como pesquisar", self)
+        self._help_button.clicked.connect(self._mostrar_ajuda)
+        actions_row.addWidget(self._help_button)
+
+        actions_row.addStretch(1)
+
+        self._btn_gerar_pdf = PushButton(FIF.DOCUMENT, "Gerar PDF", self)
+        self._btn_gerar_pdf.setEnabled(False)
+        self._btn_gerar_pdf.clicked.connect(self._gerar_pdf)
+        actions_row.addWidget(self._btn_gerar_pdf)
+
+        layout.addLayout(actions_row)
 
         # Progress indicator + loading text (BUSCA-06) — hidden until a
         # search is in flight.
@@ -266,14 +287,27 @@ class BuscaTab(QWidget):
     # Search dispatch (BUSCA-06)
     # ------------------------------------------------------------------
 
-    def _start_search(self) -> None:
-        query = self._query_entry.text()
+    _PERFIL_QUERY = "concursos na minha área"
 
+    def _start_search(self) -> None:
+        """Busca o texto digitado (a IA já usa o seu perfil por baixo)."""
+        self._dispatch_search(self._query_entry.text())
+
+    def _start_search_perfil(self) -> None:
+        """Busca guiada pelo perfil: caixa vazia -> procura "na minha área";
+        com texto -> usa o que você digitou (a IA completa com o perfil)."""
+        query = self._query_entry.text().strip() or self._PERFIL_QUERY
+        self._dispatch_search(query)
+
+    def _dispatch_search(self, query: str) -> None:
         self._clear_error()
         self._clear_cards()
         self._empty_label.hide()
 
-        self._buscar_button.setEnabled(False)
+        # Guarda o texto REALMENTE enviado (pode diferir da caixa numa busca por
+        # perfil com caixa vazia) — usado no cabeçalho do PDF.
+        self._query_str = query
+        self._set_search_enabled(False)
         self._progress.show()
         self._status_label.setText(self.LOADING_TEXT)
         self._status_label.show()
@@ -284,13 +318,16 @@ class BuscaTab(QWidget):
             self._on_error,
         )
 
+    def _set_search_enabled(self, enabled: bool) -> None:
+        self._buscar_button.setEnabled(enabled)
+        self._buscar_perfil_button.setEnabled(enabled)
+
     def _on_success(self, response: dict) -> None:
         self._stop_progress()
-        self._buscar_button.setEnabled(True)
+        self._set_search_enabled(True)
         self._clear_cards()
 
         self._resultados = response.get("results", [])
-        self._query_str = self._query_entry.text()
         self._extracted_summary = response.get("extracted_summary")
 
         self._btn_gerar_pdf.setEnabled(bool(self._resultados))
@@ -310,7 +347,7 @@ class BuscaTab(QWidget):
 
     def _on_error(self, exc: Exception) -> None:
         self._stop_progress()
-        self._buscar_button.setEnabled(True)
+        self._set_search_enabled(True)
         self._show_error(getattr(exc, "detail", str(exc)))
 
     def _stop_progress(self) -> None:

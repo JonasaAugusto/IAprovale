@@ -134,3 +134,15 @@ def test_auto_login_session_expired_clears_session(qtbot, monkeypatch):
     captured["on_error"](api_client.SessionExpiredError("expirada"))
 
     assert cleared == [True]
+
+
+def test_auto_login_network_error_stays_and_retries(qtbot, monkeypatch):
+    """v1.1.0: a connection/timeout failure during startup must NOT leave the
+    'Conectando...' screen — it schedules a retry (reconnect timer) and never
+    shows the main window while disconnected."""
+    window, captured = _make_root_with_saved_session(qtbot, monkeypatch)
+
+    captured["on_error"](api_client.ConnectionFailedError("cold start"))
+
+    assert window._reconnect_timer.isActive()  # retrying
+    assert window._main_window is None  # never showed main disconnected

@@ -267,6 +267,52 @@ def test_delete_user_issues_delete_and_returns_none_on_204(fake_response):
     assert kwargs["headers"] == {"Authorization": "Bearer tok"}
 
 
+# ---------------------------------------------------------------------------
+# v1.1.0 (Phase 6): update_profile
+# ---------------------------------------------------------------------------
+
+
+def test_update_profile_targets_put_profile_with_body_and_token(fake_response):
+    api_client.set_token("tok")
+    campos = {
+        "graduacao": "Enfermagem",
+        "uf": "SP",
+        "escolaridade": "medio,superior",
+        "curriculo": "meu currículo",
+    }
+    resp = fake_response(
+        status_code=200,
+        json_body={**campos, "updated_at": "2026-07-16T00:00:00Z"},
+        url=config.BACKEND_URL + "/profile",
+    )
+    with patch("app.api_client.requests.request", return_value=resp) as mock_request:
+        result = api_client.update_profile(campos)
+
+    args, kwargs = mock_request.call_args
+    assert args[0] == "PUT"
+    assert args[1] == config.BACKEND_URL + "/profile"
+    assert kwargs["json"] == campos
+    assert kwargs["headers"] == {"Authorization": "Bearer tok"}
+    assert result["graduacao"] == "Enfermagem"
+
+
+def test_lookup_cep_targets_get_cep_with_token(fake_response):
+    api_client.set_token("tok")
+    resp = fake_response(
+        status_code=200,
+        json_body={"cidade": "Recife", "uf": "PE"},
+        url=config.BACKEND_URL + "/cep/50000000",
+    )
+    with patch("app.api_client.requests.request", return_value=resp) as mock_request:
+        result = api_client.lookup_cep("50000000")
+
+    args, kwargs = mock_request.call_args
+    assert args[0] == "GET"
+    assert args[1] == config.BACKEND_URL + "/cep/50000000"
+    assert kwargs["headers"] == {"Authorization": "Bearer tok"}
+    assert result["cidade"] == "Recife"
+
+
 def test_delete_user_self_delete_409_raises_typed_exception(fake_response):
     api_client.set_token("tok")
     detail = "Você não pode excluir a sua própria conta."
