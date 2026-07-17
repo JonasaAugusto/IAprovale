@@ -164,7 +164,25 @@ def test_search_parses_nested_result_shape(fake_response):
     args, kwargs = mock_request.call_args
     assert args[0] == "POST"
     assert args[1] == config.BACKEND_URL + "/search"
-    assert kwargs["json"] == {"query": "saúde"}
+    assert kwargs["json"] == {"query": "saúde", "usar_curriculo": False}
+    assert kwargs["headers"] == {"Authorization": "Bearer tok"}
+
+
+def test_search_sends_usar_curriculo_true_when_requested(fake_response):
+    search_response = {"results": [], "count": 0, "is_empty": True, "message": None}
+    resp = fake_response(
+        status_code=200,
+        json_body=search_response,
+        url=config.BACKEND_URL + "/search",
+    )
+    api_client.set_token("tok")
+    with patch("app.api_client.requests.request", return_value=resp) as mock_request:
+        api_client.search("saúde", usar_curriculo=True)
+
+    args, kwargs = mock_request.call_args
+    assert args[0] == "POST"
+    assert args[1] == config.BACKEND_URL + "/search"
+    assert kwargs["json"] == {"query": "saúde", "usar_curriculo": True}
     assert kwargs["headers"] == {"Authorization": "Bearer tok"}
 
 

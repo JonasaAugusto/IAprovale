@@ -212,9 +212,19 @@ def update_profile(campos: dict) -> dict:
     return _request("PUT", "/profile", json_body=campos, auth=True)
 
 
-def search(query: str) -> dict:
-    """POST /search -> {results, count, is_empty, message}."""
-    return _request("POST", "/search", json_body={"query": query}, auth=True)
+def search(query: str, usar_curriculo: bool = False) -> dict:
+    """POST /search -> {results, count, is_empty, message}.
+
+    `usar_curriculo` opts in (per search) to the backend reading the saved
+    profile's currículo as a secondary signal for the DeepSeek extraction.
+    Always sent explicitly (default False) — the backend has its own
+    default, but this keeps the client's request body self-documenting."""
+    return _request(
+        "POST",
+        "/search",
+        json_body={"query": query, "usar_curriculo": usar_curriculo},
+        auth=True,
+    )
 
 
 def lookup_cep(cep: str) -> dict:
