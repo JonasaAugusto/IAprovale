@@ -160,6 +160,76 @@ def test_gerar_pdf_query_e_summary_longos_nao_estouram(monkeypatch):
     assert result[:4] == b"%PDF"
 
 
+def test_gerar_pdf_mostra_localizacao_quando_uf_e_regiao():
+    """Quando uf e regiao existem, o PDF mostra 'Localização: UF · Região'
+    logo após o título."""
+    resultado = [
+        {
+            "titulo": "Concurso Localizado",
+            "cargos": [],
+            "datas": {"fim": "sem data"},
+            "noticia": {"link": ""},
+            "is_new": False,
+            "uf": "MG",
+            "regiao": "Sudeste",
+        }
+    ]
+    decoded = _decoded_content_streams(gerar_pdf(resultado, ""))
+    assert "Localização: MG · Sudeste".encode("windows-1252") in decoded
+
+
+def test_gerar_pdf_omite_localizacao_sem_uf_e_regiao():
+    """Quando uf e regiao estão ambos vazios/ausentes, a linha 'Localização:'
+    não aparece no PDF."""
+    resultado = [
+        {
+            "titulo": "Concurso Sem Localização",
+            "cargos": [],
+            "datas": {"fim": "sem data"},
+            "noticia": {"link": ""},
+            "is_new": False,
+        }
+    ]
+    decoded = _decoded_content_streams(gerar_pdf(resultado, ""))
+    assert "Localização:".encode("windows-1252") not in decoded
+
+
+def test_gerar_pdf_prioriza_cargos_compativeis():
+    """Quando cargos_compativeis está presente, o PDF usa essa lista com o
+    rótulo 'Cargos compatíveis:', ignorando cargos completo."""
+    resultado = [
+        {
+            "titulo": "Concurso Filtrado",
+            "cargos_compativeis": ["Enfermeiro"],
+            "cargos": ["Enfermeiro", "Médico", "Outro"],
+            "datas": {"fim": "sem data"},
+            "noticia": {"link": ""},
+            "is_new": False,
+        }
+    ]
+    decoded = _decoded_content_streams(gerar_pdf(resultado, ""))
+    assert "Cargos compatíveis:".encode("windows-1252") in decoded
+    assert "Enfermeiro".encode("windows-1252") in decoded
+
+
+def test_gerar_pdf_fallback_cargos_sem_compativeis():
+    """Quando cargos_compativeis está ausente, o PDF cai para cargos com o
+    rótulo 'Cargos:' (não 'Cargos compatíveis:')."""
+    resultado = [
+        {
+            "titulo": "Concurso Sem Filtro",
+            "cargos": ["Analista"],
+            "datas": {"fim": "sem data"},
+            "noticia": {"link": ""},
+            "is_new": False,
+        }
+    ]
+    decoded = _decoded_content_streams(gerar_pdf(resultado, ""))
+    assert "Cargos:".encode("windows-1252") in decoded
+    assert "Analista".encode("windows-1252") in decoded
+    assert "Cargos compatíveis:".encode("windows-1252") not in decoded
+
+
 def test_gerar_pdf_ptbr_chars():
     """gerar_pdf com caracteres PT-BR não levanta UnicodeEncodeError."""
     resultado = [
