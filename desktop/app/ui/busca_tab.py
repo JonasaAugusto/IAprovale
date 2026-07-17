@@ -48,6 +48,7 @@ from qfluentwidgets import (
     IndeterminateProgressBar,
     InfoBar,
     InfoBarPosition,
+    MessageBox,
     MessageBoxBase,
     PrimaryPushButton,
     PushButton,
@@ -242,6 +243,8 @@ class BuscaTab(QWidget):
         pdf_row_layout.setContentsMargins(0, 0, 0, 0)
         pdf_row_layout.setSpacing(styles.SPACING_SM)
 
+        pdf_row_layout.addStretch(1)
+
         self._btn_visualizar = PushButton("Visualizar", self._pdf_row)
         self._btn_visualizar.clicked.connect(self._visualizar_pdf)
         pdf_row_layout.addWidget(self._btn_visualizar)
@@ -424,6 +427,24 @@ class BuscaTab(QWidget):
         self._pdf_path = pdf_path
 
         self._pdf_row.show()
+        self._mostrar_popup_pdf_gerado()
+
+    def _mostrar_popup_pdf_gerado(self) -> None:
+        """Exibe um popup de sucesso confirmando a geração do PDF.
+
+        Fatorado num método próprio (em vez de inline em `_gerar_pdf`) para
+        que os testes possam monkeypatchá-lo — `MessageBox.exec()` é uma
+        chamada `QDialog.exec()` bloqueante e travaria a suíte se rodada de
+        verdade num teste headless.
+        """
+        box = MessageBox(
+            "PDF gerado",
+            "O PDF foi gerado com sucesso. As ações Visualizar, Salvar e "
+            "Apagar estão disponíveis abaixo da área de pesquisa.",
+            self.window(),
+        )
+        box.hideCancelButton()
+        box.exec()
 
     def _visualizar_pdf(self) -> None:
         """Abre o PDF gerado no visualizador padrão do Windows."""
