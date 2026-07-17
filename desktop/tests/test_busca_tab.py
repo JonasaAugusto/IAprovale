@@ -54,6 +54,11 @@ def captured(monkeypatch):
 def tab(qtbot, captured):
     widget = BuscaTab(_FakeSession())
     qtbot.addWidget(widget)
+    # Discard the mount-time profile-fetch dispatch (_fetch_curriculo_state)
+    # so every existing search test's `captured.calls == 1` assertion stays
+    # valid — it only cares about the dispatch triggered by the test itself.
+    captured.calls = 0
+    captured.fn = captured.on_success = captured.on_error = None
     return widget
 
 
@@ -276,6 +281,64 @@ def test_gerar_pdf_preserva_show_dinamico(qtbot, tab, captured, monkeypatch, tmp
 
     tab._apagar_pdf()
     assert tab._pdf_row.isHidden() is True
+
+
+# ---------------------------------------------------------------------------
+# quick-260717-i43: "Usar meu currículo" toggle (CURRICULO-TOGGLE-01)
+# ---------------------------------------------------------------------------
+
+
+def test_curriculo_switch_exists_and_starts_unchecked(qtbot, tab, captured):
+    assert tab._curriculo_switch.isChecked() is False
+
+
+def test_search_dispatches_usar_curriculo_true_when_switch_on(qtbot, tab, captured, monkeypatch):
+    tab._curriculo_switch.setChecked(True)
+    tab._query_entry.setText("concurso na área de saúde")
+    tab._start_search()
+
+    recorded = {}
+
+    def _fake_search(query, usar_curriculo=False):
+        recorded["usar_curriculo"] = usar_curriculo
+        return {"results": [], "count": 0, "is_empty": True, "message": None}
+
+    monkeypatch.setattr(busca_tab_module.api_client, "search", _fake_search)
+    captured.fn()
+
+    assert recorded["usar_curriculo"] is True
+
+
+def test_search_dispatches_usar_curriculo_false_when_switch_off(qtbot, tab, captured, monkeypatch):
+    tab._query_entry.setText("concurso na área de saúde")
+    tab._start_search()
+
+    recorded = {}
+
+    def _fake_search(query, usar_curriculo=False):
+        recorded["usar_curriculo"] = usar_curriculo
+        return {"results": [], "count": 0, "is_empty": True, "message": None}
+
+    monkeypatch.setattr(busca_tab_module.api_client, "search", _fake_search)
+    captured.fn()
+
+    assert recorded["usar_curriculo"] is False
+
+
+def test_profile_with_curriculo_enables_switch(qtbot, tab, captured):
+    tab._on_profile_loaded_curriculo({"curriculo": "meu cv"})
+    assert tab._curriculo_switch.isEnabled() is True
+
+
+def test_profile_without_curriculo_disables_switch_with_tooltip(qtbot, tab, captured):
+    tab._on_profile_loaded_curriculo({"curriculo": None})
+    assert tab._curriculo_switch.isEnabled() is False
+    assert tab._curriculo_switch.toolTip() == "Anexe seu currículo no Perfil pra usar esta opção"
+
+
+def test_profile_fetch_error_leaves_switch_enabled(qtbot, tab, captured):
+    tab._on_profile_error_curriculo(Exception("boom"))
+    assert tab._curriculo_switch.isEnabled() is True
 
 
 def test_apagar_pdf_removes_file_and_hides_row(qtbot, tab, monkeypatch, tmp_path):
