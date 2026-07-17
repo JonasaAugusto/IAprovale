@@ -174,6 +174,7 @@ def test_gerar_pdf_writes_file_and_shows_pdf_row(qtbot, tab, captured, monkeypat
         lambda resultados, query, extracted_summary=None: b"%PDF-1.4 test",
     )
     monkeypatch.setattr("app.config.APP_DIR", tmp_path)
+    monkeypatch.setattr(tab, "_mostrar_popup_pdf_gerado", lambda: None)
 
     tab._resultados = [{"titulo": "Concurso A", "cargos": [], "datas": {}, "noticia": {}}]
     tab._query_str = "busca teste"
@@ -228,12 +229,62 @@ def test_refresh_theme_is_a_noop_with_no_results(qtbot, tab):
     assert _cards(tab) == []
 
 
+def test_gerar_pdf_dispara_popup(qtbot, tab, captured, monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        "app.pdf_export.gerar_pdf",
+        lambda resultados, query, extracted_summary=None: b"%PDF-1.4 test",
+    )
+    monkeypatch.setattr("app.config.APP_DIR", tmp_path)
+
+    calls: list[None] = []
+    monkeypatch.setattr(tab, "_mostrar_popup_pdf_gerado", lambda: calls.append(None))
+
+    tab._resultados = [{"titulo": "Concurso A", "cargos": [], "datas": {}, "noticia": {}}]
+    tab._query_str = "busca teste"
+
+    tab._gerar_pdf()
+
+    assert len(calls) == 1
+
+
+def test_pdf_row_botoes_centralizados(qtbot, tab, captured):
+    pdf_row_layout = tab._pdf_row.layout()
+    count = pdf_row_layout.count()
+
+    assert pdf_row_layout.itemAt(0).widget() is None  # spacer
+    assert pdf_row_layout.itemAt(count - 1).widget() is None  # spacer
+
+    middle_widgets = [
+        pdf_row_layout.itemAt(i).widget() for i in range(1, count - 1)
+    ]
+    assert middle_widgets == [tab._btn_visualizar, tab._btn_salvar, tab._btn_apagar]
+
+
+def test_gerar_pdf_preserva_show_dinamico(qtbot, tab, captured, monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        "app.pdf_export.gerar_pdf",
+        lambda resultados, query, extracted_summary=None: b"%PDF-1.4 test",
+    )
+    monkeypatch.setattr("app.config.APP_DIR", tmp_path)
+    monkeypatch.setattr(tab, "_mostrar_popup_pdf_gerado", lambda: None)
+
+    tab._resultados = [{"titulo": "Concurso A", "cargos": [], "datas": {}, "noticia": {}}]
+    tab._query_str = "busca teste"
+
+    tab._gerar_pdf()
+    assert tab._pdf_row.isHidden() is False
+
+    tab._apagar_pdf()
+    assert tab._pdf_row.isHidden() is True
+
+
 def test_apagar_pdf_removes_file_and_hides_row(qtbot, tab, monkeypatch, tmp_path):
     monkeypatch.setattr(
         "app.pdf_export.gerar_pdf",
         lambda resultados, query, extracted_summary=None: b"%PDF-1.4 test",
     )
     monkeypatch.setattr("app.config.APP_DIR", tmp_path)
+    monkeypatch.setattr(tab, "_mostrar_popup_pdf_gerado", lambda: None)
 
     tab._resultados = [{"titulo": "Concurso A", "cargos": [], "datas": {}, "noticia": {}}]
     tab._query_str = "busca teste"
