@@ -20,6 +20,8 @@ Admin-tab visibility here is UX only (T-05-ADMINGATE) — the backend's
 
 from __future__ import annotations
 
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
 from qfluentwidgets import (
     FluentIcon as FIF,
@@ -36,6 +38,7 @@ from app.ui import styles
 from app.ui.admin_tab import AdminTab
 from app.ui.busca_tab import BuscaTab
 from app.ui.perfil_dialog import PerfilDialog
+from app.updater import check_for_update
 
 _BUSCA_ROUTE = "Busca"
 _ADMIN_ROUTE = "Admin"
@@ -114,6 +117,26 @@ class MainWindow(QWidget):
         layout.addWidget(self._stack, 1)
 
         self._pivot.setCurrentItem(_BUSCA_ROUTE)
+
+        # Auto-update Nível 1 (U-3): check off-thread, never block/delay the
+        # window; a failed/absent-update check is deliberately silent.
+        run_in_background(check_for_update, self._on_update_check, lambda _exc: None)
+
+    # --- Auto-update (Nível 1: check + notify, never self-replace) ------
+
+    def _on_update_check(self, info: dict | None) -> None:
+        if not info:
+            return
+        bar = InfoBar.success(
+            title=f"Nova versão disponível (v{info['version']})",
+            content="",
+            duration=-1,
+            position=InfoBarPosition.TOP,
+            parent=self,
+        )
+        button = PushButton("Baixar", self)
+        button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(info["url"])))
+        bar.addWidget(button)
 
     # --- Perfil (botão no header) ---------------------------------------
 

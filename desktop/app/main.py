@@ -48,6 +48,7 @@ from app.async_helpers import run_in_background
 from app.ui import styles
 from app.ui.login_page import LoginPage
 from app.ui.main_window import MainWindow
+from app.version import __version__
 
 # Titlebar/taskbar icon while the app is running — separate from both the
 # PDF/login logo (drawn at runtime from assets/logo.png) and the frozen
@@ -109,7 +110,7 @@ class _RootWindow(QWidget):
         # from cascading into descendant plain QWidgets, which caused the
         # "boxes inside boxes" regression around login-screen labels).
         self.setObjectName(styles.ROOT_WINDOW_OBJECT_NAME)
-        self.setWindowTitle(styles.TITLE)
+        self.setWindowTitle(f"{styles.TITLE} v{__version__}")  # U-1: versao discreta no titulo
         self.resize(*styles.WINDOW_SIZE)
         self.setMinimumSize(*styles.MIN_SIZE)
 

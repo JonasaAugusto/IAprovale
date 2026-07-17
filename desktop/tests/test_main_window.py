@@ -120,9 +120,13 @@ def test_update_available_shows_infobar(qtbot, monkeypatch):
 
     calls = []
 
+    class _FakeBar:
+        def addWidget(self, _widget) -> None:
+            pass
+
     def _fake_success(**kwargs):
         calls.append(kwargs)
-        return object()
+        return _FakeBar()
 
     monkeypatch.setattr(main_window_module.InfoBar, "success", _fake_success)
 
