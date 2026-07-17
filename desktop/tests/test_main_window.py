@@ -45,8 +45,10 @@ def test_admin_tab_conditional():
 
 def test_refresh_theme_delegates_to_busca_and_admin_tabs(qtbot, monkeypatch):
     from app.ui import admin_tab as admin_tab_module
+    from app.ui import busca_tab as busca_tab_module
 
     monkeypatch.setattr(admin_tab_module, "run_in_background", lambda *a, **k: None)
+    monkeypatch.setattr(busca_tab_module, "run_in_background", lambda *a, **k: None)
 
     window = MainWindow(
         _FakeSession(is_admin=True), on_logout=lambda: None, on_toggle_theme=lambda: None
@@ -62,7 +64,11 @@ def test_refresh_theme_delegates_to_busca_and_admin_tabs(qtbot, monkeypatch):
     assert calls == ["busca", "admin"]
 
 
-def test_refresh_theme_skips_admin_tab_when_absent(qtbot):
+def test_refresh_theme_skips_admin_tab_when_absent(qtbot, monkeypatch):
+    from app.ui import busca_tab as busca_tab_module
+
+    monkeypatch.setattr(busca_tab_module, "run_in_background", lambda *a, **k: None)
+
     window = MainWindow(
         _FakeSession(is_admin=False), on_logout=lambda: None, on_toggle_theme=lambda: None
     )

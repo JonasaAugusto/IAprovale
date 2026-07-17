@@ -55,6 +55,7 @@ from qfluentwidgets import (
     SearchLineEdit,
     SmoothScrollArea,
     StrongBodyLabel,
+    SwitchButton,
     TransparentPushButton,
 )
 
@@ -164,6 +165,11 @@ class BuscaTab(QWidget):
         "Nenhum concurso encontrado com esses critérios. "
         "Tente ajustar sua busca ou sua formação salva."
     )
+    _CURRICULO_TOOLTIP_DEFAULT = (
+        "Quando ligado, a IA lê o currículo salvo no seu perfil pra achar "
+        "concursos que combinam com você."
+    )
+    _CURRICULO_TOOLTIP_DISABLED = "Anexe seu currículo no Perfil pra usar esta opção"
 
     def __init__(self, session, parent=None) -> None:
         super().__init__(parent)
@@ -217,6 +223,17 @@ class BuscaTab(QWidget):
         self._help_button = TransparentPushButton(FIF.HELP, "Como pesquisar", self)
         self._help_button.clicked.connect(self._mostrar_ajuda)
         actions_row.addWidget(self._help_button)
+
+        # Toggle explícito e visível (CURRICULO-TOGGLE-01): desligado por
+        # padrão a cada sessão (não persiste), habilitado por padrão
+        # (fail-open) até a busca de perfil em background decidir o
+        # contrário — ver _fetch_curriculo_state.
+        self._curriculo_switch = SwitchButton(self)
+        self._curriculo_switch.setOnText("Usar meu currículo")
+        self._curriculo_switch.setOffText("Usar meu currículo")
+        self._curriculo_switch.setChecked(False)
+        self._curriculo_switch.setToolTip(self._CURRICULO_TOOLTIP_DEFAULT)
+        actions_row.addWidget(self._curriculo_switch)
 
         actions_row.addStretch(1)
 
@@ -286,6 +303,8 @@ class BuscaTab(QWidget):
         self._scroll_area.setWidget(self._results_container)
         layout.addWidget(self._scroll_area, 1)
 
+        self._fetch_curriculo_state()
+
     # ------------------------------------------------------------------
     # Search dispatch (BUSCA-06)
     # ------------------------------------------------------------------
@@ -316,7 +335,7 @@ class BuscaTab(QWidget):
         self._status_label.show()
 
         run_in_background(
-            lambda: api_client.search(query),
+            lambda: api_client.search(query, usar_curriculo=self._curriculo_switch.isChecked()),
             self._on_success,
             self._on_error,
         )
@@ -324,6 +343,35 @@ class BuscaTab(QWidget):
     def _set_search_enabled(self, enabled: bool) -> None:
         self._buscar_button.setEnabled(enabled)
         self._buscar_perfil_button.setEnabled(enabled)
+
+    # ------------------------------------------------------------------
+    # "Usar meu currículo" toggle state (CURRICULO-TOGGLE-01) — a
+    # background profile fetch on mount decides whether the switch is
+    # enabled. Does NOT block UI construction (dispatched via
+    # run_in_background like every other network call in this file).
+    # ------------------------------------------------------------------
+
+    def _fetch_curriculo_state(self) -> None:
+        run_in_background(
+            lambda: api_client.get_profile(),
+            self._on_profile_loaded_curriculo,
+            self._on_profile_error_curriculo,
+        )
+
+    def _on_profile_loaded_curriculo(self, profile: dict) -> None:
+        if profile.get("curriculo"):
+            self._curriculo_switch.setEnabled(True)
+            self._curriculo_switch.setToolTip(self._CURRICULO_TOOLTIP_DEFAULT)
+        else:
+            self._curriculo_switch.setEnabled(False)
+            self._curriculo_switch.setToolTip(self._CURRICULO_TOOLTIP_DISABLED)
+
+    def _on_profile_error_curriculo(self, exc: Exception) -> None:
+        # Fail-open: the backend ignores usar_curriculo when there's no
+        # saved currículo, so leaving the switch enabled on a profile-fetch
+        # error is safe. No-op, kept as an explicit method so it stays
+        # greppable/testable.
+        pass
 
     def _on_success(self, response: dict) -> None:
         self._stop_progress()

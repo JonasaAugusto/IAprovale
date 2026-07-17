@@ -21,6 +21,7 @@ import pytest
 from app import api_client, auth_store
 from app import main as main_module
 from app.main import _RootWindow
+from app.ui import busca_tab as busca_tab_module
 from app.ui import styles
 
 
@@ -36,6 +37,11 @@ class _FakeSession:
 def root(qtbot, monkeypatch):
     monkeypatch.setattr(auth_store, "load_session", lambda: None)
     monkeypatch.setattr(styles, "save_theme_pref", lambda _name: None)
+    # BuscaTab's mount-time profile fetch (_fetch_curriculo_state) would
+    # otherwise dispatch a real background thread hitting the network when
+    # `_show_main` builds a real MainWindow/BuscaTab below — stub it like
+    # every other screen's run_in_background in this test suite.
+    monkeypatch.setattr(busca_tab_module, "run_in_background", lambda *a, **k: None)
     window = _RootWindow()
     qtbot.addWidget(window)
     return window
