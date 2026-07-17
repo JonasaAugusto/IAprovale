@@ -139,6 +139,49 @@ def test_prepopulate_restores_checkboxes_fields_and_round_trips(qtbot, parent):
     assert "experiencia" not in campos
 
 
+# --- data de formação (v1.4.0) ------------------------------------------
+
+
+def test_prepopulate_data_formacao_futura_shows_mmaaaa(qtbot, parent):
+    d = PerfilDialog({"data_formacao_futura": "2027-12"}, parent=parent)
+    qtbot.addWidget(d)
+    assert d._data_formacao_futura.text() == "12/2027"
+
+
+def test_prepopulate_sem_data_formacao_futura_deixa_campo_vazio(dialog):
+    assert dialog._data_formacao_futura.text() == ""
+
+
+def test_coletar_converte_data_para_iso(dialog):
+    dialog._data_formacao_futura.setText("12/2027")
+    campos = dialog.coletar()
+    assert campos["data_formacao_futura"] == "2027-12"
+
+
+def test_coletar_data_vazia_vira_none(dialog):
+    campos = dialog.coletar()
+    assert campos["data_formacao_futura"] is None
+
+
+@pytest.mark.parametrize("invalido", ["13/2027", "2027", "abc", "00/2027"])
+def test_validate_data_invalida_bloqueia_e_mostra_erro(dialog, monkeypatch, invalido):
+    from app.ui import perfil_dialog as mod
+
+    erros = []
+    monkeypatch.setattr(
+        mod.InfoBar, "error", lambda **kwargs: erros.append(kwargs.get("content"))
+    )
+    dialog._data_formacao_futura.setText(invalido)
+    assert dialog.validate() is False
+    assert erros and "MM/AAAA" in erros[0]
+
+
+def test_validate_data_valida_ou_vazia_passa(dialog):
+    assert dialog.validate() is True
+    dialog._data_formacao_futura.setText("12/2027")
+    assert dialog.validate() is True
+
+
 def test_cep_autofill_fills_cidade_and_uf(dialog, monkeypatch):
     from app.ui import perfil_dialog as mod
 

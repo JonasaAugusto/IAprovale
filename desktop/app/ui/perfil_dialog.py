@@ -20,6 +20,7 @@ via `api_client` (restrição de segurança do projeto).
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl
@@ -79,6 +80,32 @@ _MOBILIDADE = [
 def _none_if_blank(text: str) -> str | None:
     text = text.strip()
     return text or None
+
+
+# Data de formação (v1.4.0): o usuário digita MM/AAAA (leigo); a API fala
+# YYYY-MM. A conversão vive nestes dois helpers de módulo, espelháveis nos
+# testes.
+_MMAAAA_RE = re.compile(r"^(0[1-9]|1[0-2])/(\d{4})$")
+
+
+def _mmaaaa_to_iso(text: str) -> str | None:
+    """"MM/AAAA" -> "AAAA-MM". Vazio -> None. Inválido -> ValueError leigo."""
+    text = text.strip()
+    if not text:
+        return None
+    m = _MMAAAA_RE.match(text)
+    if not m:
+        raise ValueError("Data de formação inválida. Use MM/AAAA, por exemplo 12/2027.")
+    mes, ano = m.group(1), m.group(2)
+    return f"{ano}-{mes}"
+
+
+def _iso_to_mmaaaa(iso: str | None) -> str:
+    """"AAAA-MM" -> "MM/AAAA". None/vazio/inesperado -> ""."""
+    if not iso or len(iso) != 7 or iso[4] != "-":
+        return ""
+    ano, mes = iso[:4], iso[5:]
+    return f"{mes}/{ano}"
 
 
 class PerfilDialog(MessageBoxBase):
@@ -151,6 +178,18 @@ class PerfilDialog(MessageBoxBase):
         self._formacao_futura = LineEdit(form)
         self._formacao_futura.setPlaceholderText("ex: Mestrado em Saúde Coletiva")
         col.addWidget(self._formacao_futura)
+
+        # Data de formação (v1.4.0) — gate do match futuro no backend.
+        self._data_formacao_futura = LineEdit(form)
+        self._data_formacao_futura.setPlaceholderText("MM/AAAA")
+        col.addWidget(self._data_formacao_futura)
+        _data_hint = CaptionLabel(
+            "Data prevista de formação — usada pra te mostrar concursos que "
+            "você poderá prestar quando se formar.",
+            form,
+        )
+        _data_hint.setWordWrap(True)
+        col.addWidget(_data_hint)
 
         # --- Localização (CEP com autopreenchimento) ---
         col.addWidget(StrongBodyLabel("Localização", form))
@@ -300,6 +339,9 @@ class PerfilDialog(MessageBoxBase):
                 self._cursos[nivel].setEnabled(self._checks[nivel].isChecked())
 
         self._formacao_futura.setText(perfil.get("formacao_futura") or "")
+        self._data_formacao_futura.setText(
+            _iso_to_mmaaaa(perfil.get("data_formacao_futura"))
+        )
         self._cep.setText(perfil.get("cep") or "")
         self._cidade.setText(perfil.get("cidade") or "")
 
@@ -401,6 +443,22 @@ class PerfilDialog(MessageBoxBase):
         self._curriculo.clear()
         self._set_curriculo_anexado(False)
 
+    def validate(self) -> bool:
+        """Hook do MessageBoxBase: o Salvar só fecha o diálogo se retornar
+        True. Barra a data de formação em formato inválido com erro leigo."""
+        try:
+            _mmaaaa_to_iso(self._data_formacao_futura.text())
+        except ValueError as exc:
+            InfoBar.error(
+                title="",
+                content=str(exc),
+                duration=5000,
+                position=InfoBarPosition.TOP,
+                parent=self,
+            )
+            return False
+        return True
+
     def coletar(self) -> dict:
         """Monta o dict de campos para o PUT /profile. Campos em branco viram
         None; escolaridade é o csv dos níveis marcados."""
@@ -414,12 +472,19 @@ class PerfilDialog(MessageBoxBase):
         uf_idx = self._uf.currentIndex()
         uf = _UFS[uf_idx] if uf_idx >= 0 else None
 
+        try:
+            data_formacao = _mmaaaa_to_iso(self._data_formacao_futura.text())
+        except ValueError:
+            # validate() barra o salvar antes; aqui é só rede de segurança.
+            data_formacao = None
+
         return {
             "graduacao": cursos["graduacao"],
             "tecnico": cursos["tecnico"],
             "pos_graduacao": cursos["pos_graduacao"],
             "escolaridade": ",".join(niveis_marcados) or None,
             "formacao_futura": _none_if_blank(self._formacao_futura.text()),
+            "data_formacao_futura": data_formacao,
             "cep": _none_if_blank(self._cep.text()),
             "uf": uf,
             "cidade": _none_if_blank(self._cidade.text()),
