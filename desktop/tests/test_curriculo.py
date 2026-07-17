@@ -31,11 +31,12 @@ def test_formato_nao_suportado_levanta_erro(tmp_path):
         curriculo.extrair_texto(str(p))
 
 
-def test_trunca_no_limite(tmp_path):
+def test_nao_trunca_curriculo_grande(tmp_path):
+    # Sem limite por decisão de produto: currículos reais passam de 5000 chars.
     p = tmp_path / "big.txt"
-    p.write_text("a" * (curriculo.MAX_CHARS + 500), encoding="utf-8")
+    p.write_text("a" * 20_000, encoding="utf-8")
     texto = curriculo.extrair_texto(str(p))
-    assert len(texto) <= curriculo.MAX_CHARS
+    assert len(texto) == 20_000
 
 
 def test_extrair_pdf(tmp_path):

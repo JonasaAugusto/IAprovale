@@ -14,10 +14,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-# Limite de caracteres do texto extraído — espelha o max_length do campo
-# `curriculo` no backend (5000), truncando aqui antes de exibir/enviar.
-MAX_CHARS = 5000
-
 EXTENSOES_SUPORTADAS = (".pdf", ".txt")
 
 
@@ -30,10 +26,11 @@ class CurriculoVazioError(CurriculoError):
 
 
 def _normalizar(texto: str) -> str:
-    # Colapsa espaços/linhas em excesso e trunca no limite.
+    # Colapsa espaços/linhas em excesso. Sem limite de tamanho — currículos
+    # reais passam de 5000 chars e o backend também não limita mais; o
+    # controle de custo de token é responsabilidade da montagem do prompt.
     linhas = [ln.strip() for ln in texto.splitlines()]
-    texto = "\n".join(ln for ln in linhas if ln)
-    return texto[:MAX_CHARS].strip()
+    return "\n".join(ln for ln in linhas if ln).strip()
 
 
 def extrair_texto(caminho: str) -> str:
