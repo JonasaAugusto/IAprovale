@@ -76,8 +76,9 @@ O site em GitHub Pages evoluirá de homepage institucional (já em `web-app/home
 
 | Versão | Escopo |
 |--------|--------|
-| **v1.3.0** | Currículo na busca: anexar um PDF direto na tela de busca → o texto é extraído localmente (sem custo de IA) e a IA usa o conteúdo para refinar os resultados; modo "barra = só localização" com aviso ao anexar. |
-| **v1.4.0** | Auto-update nível 1: o app consulta a API de releases do GitHub e avisa quando existe versão nova (sem substituir o binário automaticamente). |
+| **v1.3.0** | Currículo na busca: com um toggle visível ("Usar meu currículo"), a IA lê o currículo salvo no perfil e extrai formações, experiências e áreas que somam na pesquisa — especialmente em buscas curtas ou só com localização. |
+| **v1.4.0** | Formação futura: informe sua graduação em andamento e a data de formatura — concursos compatíveis com a formação futura aparecem com a nota "aberto para formação futura" (no app e no PDF), e só quando a data coincide com o prazo. |
+| **v1.5.0** | Auto-update nível 1: o app consulta a API de releases do GitHub e avisa quando existe versão nova (sem substituir o binário automaticamente). |
 
 ## Rodando localmente
 
