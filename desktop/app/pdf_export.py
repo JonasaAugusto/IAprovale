@@ -32,6 +32,18 @@ def _ordenar_novos_primeiro(resultados: list[dict]) -> list[dict]:
     return sorted(resultados, key=lambda c: not c.get("is_new"))
 
 
+def _fmt_localizacao(concurso: dict) -> str:
+    """UF + região do concurso -> "MG · Sudeste" (ou só o que existir). Vazio
+    se o MCP não trouxer nenhum dos dois. Espelha
+    app/ui/concurso_card.py::_fmt_localizacao para manter PDF e card
+    consistentes (não alterar concurso_card.py — apenas espelhar aqui)."""
+    uf = (concurso.get("uf") or "").strip().upper()
+    regiao = (concurso.get("regiao") or "").strip().title()
+    if uf and regiao:
+        return f"{uf} · {regiao}"
+    return uf or regiao or ""
+
+
 def gerar_pdf(
     resultados: list[dict], query: str = "", extracted_summary: str | None = None
 ) -> bytes:
@@ -96,7 +108,11 @@ def gerar_pdf(
 
     for i, c in enumerate(_ordenar_novos_primeiro(resultados), 1):
         titulo = c.get("titulo", "Sem título")
-        cargos_list = c.get("cargos", [])
+        # Prioriza os cargos compatíveis anotados pelo backend; fallback para
+        # a lista completa quando ausente — mesma prioridade do ConcursoCard.
+        cargos_list = c.get("cargos_compativeis") or c.get("cargos", [])
+        cargos_filtrados = bool(c.get("cargos_compativeis"))
+        localizacao = _fmt_localizacao(c)
         prazo = c.get("datas", {}).get("fim", "não informado")
         link = c.get("noticia", {}).get("link", "")
 
@@ -119,15 +135,26 @@ def gerar_pdf(
         pdf.set_font("Helvetica", "B", 11)
         pdf.multi_cell(0, 6, f"{i}. {titulo}", new_x="LMARGIN", new_y="NEXT")
 
-        # Cargos — truncados em 6 itens para evitar parede de texto
+        # Localização (uf · região) — só quando o MCP traz o dado, logo após o título.
+        if localizacao:
+            pdf.set_text_color(90, 90, 90)
+            pdf.set_font("Helvetica", "", 9)
+            pdf.multi_cell(
+                0, 5, f"Localização: {localizacao}", new_x="LMARGIN", new_y="NEXT"
+            )
+            pdf.set_text_color(0, 0, 0)
+
+        # Cargos — truncados em 6 itens para evitar parede de texto. Rótulo
+        # reflete a prioridade cargos_compativeis -> cargos (mesma do card).
         if cargos_list:
             if len(cargos_list) > 6:
                 cargos_display = ", ".join(cargos_list[:6]) + f" (+{len(cargos_list) - 6} outros)"
             else:
                 cargos_display = ", ".join(cargos_list)
+            rotulo = "Cargos compatíveis:" if cargos_filtrados else "Cargos:"
             pdf.set_text_color(90, 90, 90)
             pdf.set_font("Helvetica", "", 9)
-            pdf.multi_cell(0, 5, f"Cargo(s): {cargos_display}", new_x="LMARGIN", new_y="NEXT")
+            pdf.multi_cell(0, 5, f"{rotulo} {cargos_display}", new_x="LMARGIN", new_y="NEXT")
             pdf.set_text_color(0, 0, 0)
 
         # Prazo
