@@ -36,6 +36,23 @@ _COPIED_TEXT = "Copiado!"
 _COPIED_FEEDBACK_MS = 1500
 
 
+def _fmt_data_futura(iso: str | None) -> str:
+    """"AAAA-MM" -> "MM/AAAA". None/vazio/inesperado -> "". Espelho do
+    _iso_to_mmaaaa do perfil_dialog (copiado, não importado — mesmo padrão
+    de _fmt_localizacao vs. pdf_export)."""
+    if not iso or len(iso) != 7 or iso[4] != "-":
+        return ""
+    return f"{iso[5:]}/{iso[:4]}"
+
+
+def _texto_futuro(concurso: dict) -> str:
+    """Texto da nota de formação futura — a MESMA montagem é espelhada em
+    pdf_export.py (paridade card↔PDF, invariante do projeto)."""
+    base = "Aberto para formação futura — quando você se formar"
+    data = _fmt_data_futura(concurso.get("data_formacao_futura"))
+    return f"{base} ({data})" if data else base
+
+
 def _fmt_localizacao(concurso: dict) -> str:
     """UF + região do concurso -> "MG · Sudeste" (ou só o que existir). Vazio
     se o MCP não trouxer nenhum dos dois."""
@@ -118,6 +135,12 @@ class ConcursoCard(CardWidget):
         if localizacao:
             layout.addWidget(CaptionLabel(f"Localização: {localizacao}", self))
 
+        # Nota de formação futura (v1.4.0) — só quando o backend anotou o
+        # match futuro (gated por data). Cor própria (ACCENT), nunca o âmbar
+        # do NOVO, pra não confundir os dois avisos.
+        if concurso.get("futuro_match"):
+            layout.addWidget(self._make_futuro_note(_texto_futuro(concurso)))
+
         # Cargos: rótulo deixa claro que são só os compatíveis (quando anotados).
         if self._cargos:
             rotulo = "Cargos compatíveis:" if self._cargos_filtrados else "Cargos:"
@@ -149,6 +172,16 @@ class ConcursoCard(CardWidget):
 
         link_row.addStretch(1)
         layout.addLayout(link_row)
+
+    def _make_futuro_note(self, texto: str) -> QLabel:
+        note = CaptionLabel(texto, self)
+        note.setWordWrap(True)
+        note.setStyleSheet(
+            f"border-left: 3px solid {styles.ACCENT}; color: {styles.ACCENT}; "
+            f"padding: {styles.SPACING_XS}px {styles.SPACING_SM}px; "
+            "font-weight: 600;"
+        )
+        return note
 
     def _make_novo_badge(self) -> QLabel:
         badge = CaptionLabel("NOVO", self)

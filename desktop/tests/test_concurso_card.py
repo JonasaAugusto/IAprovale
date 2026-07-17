@@ -213,3 +213,42 @@ def test_card_sem_link_omite_botao_copiar_e_mostra_fallback(qtbot):
 
     fallback_labels = [w for w in card.findChildren(QLabel) if w.text() == "link não disponível"]
     assert len(fallback_labels) == 1
+
+
+# --- nota de formação futura (v1.4.0) ------------------------------------
+
+
+def _futuro_labels(card):
+    return [
+        w
+        for w in card.findChildren(QLabel)
+        if w.text().startswith("Aberto para formação futura")
+    ]
+
+
+def test_futuro_match_com_data_mostra_nota_com_mmaaaa(qtbot):
+    concurso = _base_concurso(futuro_match=True, data_formacao_futura="2027-12")
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+
+    labels = _futuro_labels(card)
+    assert len(labels) == 1
+    assert labels[0].text() == (
+        "Aberto para formação futura — quando você se formar (12/2027)"
+    )
+
+
+def test_futuro_match_sem_data_mostra_nota_sem_parenteses(qtbot):
+    concurso = _base_concurso(futuro_match=True)
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+
+    labels = _futuro_labels(card)
+    assert len(labels) == 1
+    assert labels[0].text() == "Aberto para formação futura — quando você se formar"
+
+
+def test_sem_futuro_match_nao_mostra_nota(qtbot):
+    card = ConcursoCard(_base_concurso())
+    qtbot.addWidget(card)
+    assert _futuro_labels(card) == []
