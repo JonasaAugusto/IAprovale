@@ -32,6 +32,22 @@ def _ordenar_novos_primeiro(resultados: list[dict]) -> list[dict]:
     return sorted(resultados, key=lambda c: not c.get("is_new"))
 
 
+def _fmt_data_futura(iso: str | None) -> str:
+    """"AAAA-MM" -> "MM/AAAA". Espelho de concurso_card._fmt_data_futura
+    (copiado, não importado — mesmo padrão de _fmt_localizacao)."""
+    if not iso or len(iso) != 7 or iso[4] != "-":
+        return ""
+    return f"{iso[5:]}/{iso[:4]}"
+
+
+def _texto_futuro(concurso: dict) -> str:
+    """MESMO texto da nota do card (concurso_card._texto_futuro) — paridade
+    card↔PDF é invariante do projeto."""
+    base = "Aberto para formação futura — quando você se formar"
+    data = _fmt_data_futura(concurso.get("data_formacao_futura"))
+    return f"{base} ({data})" if data else base
+
+
 def _fmt_localizacao(concurso: dict) -> str:
     """UF + região do concurso -> "MG · Sudeste" (ou só o que existir). Vazio
     se o MCP não trouxer nenhum dos dois. Espelha
@@ -143,6 +159,18 @@ def gerar_pdf(
                 0, 5, f"Localização: {localizacao}", new_x="LMARGIN", new_y="NEXT"
             )
             pdf.set_text_color(0, 0, 0)
+
+        # Nota de formação futura (v1.4.0) — mesma condição e texto do card
+        # (paridade obrigatória). Cor de acento, nunca o âmbar do NOVO.
+        if c.get("futuro_match"):
+            pdf.set_fill_color(*_ACCENT_RGB)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_font("Helvetica", "B", 8)
+            pdf.multi_cell(
+                0, 5, _texto_futuro(c), fill=True, new_x="LMARGIN", new_y="NEXT"
+            )
+            pdf.set_text_color(0, 0, 0)
+            pdf.ln(1)
 
         # Cargos — truncados em 6 itens para evitar parede de texto. Rótulo
         # reflete a prioridade cargos_compativeis -> cargos (mesma do card).

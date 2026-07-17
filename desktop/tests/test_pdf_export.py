@@ -245,3 +245,47 @@ def test_gerar_pdf_ptbr_chars():
     result = gerar_pdf(resultado, "saúde com graduação")
     assert isinstance(result, bytes)
     assert result[:4] == b"%PDF"
+
+
+# --- nota de formação futura (v1.4.0, paridade com o card) ---------------
+
+
+def _concurso_futuro(**overrides) -> dict:
+    concurso = {
+        "titulo": "Concurso Futuro",
+        "cargos": ["Enfermeiro"],
+        "datas": {"fim": "31/12/2027"},
+        "noticia": {"link": ""},
+        "is_new": False,
+    }
+    concurso.update(overrides)
+    return concurso
+
+
+def _pdf_escape(texto: str) -> bytes:
+    # No content stream do PDF, "(" e ")" aparecem escapados: \( e \).
+    return (
+        texto.encode("windows-1252").replace(b"(", rb"\(").replace(b")", rb"\)")
+    )
+
+
+def test_pdf_futuro_match_com_data_mostra_nota_com_mmaaaa():
+    decoded = _decoded_content_streams(
+        gerar_pdf([_concurso_futuro(futuro_match=True, data_formacao_futura="2027-12")], "")
+    )
+    nota = "Aberto para formação futura — quando você se formar (12/2027)"
+    assert _pdf_escape(nota) in decoded
+
+
+def test_pdf_futuro_match_sem_data_mostra_nota_sem_parenteses():
+    decoded = _decoded_content_streams(
+        gerar_pdf([_concurso_futuro(futuro_match=True)], "")
+    )
+    base = "Aberto para formação futura — quando você se formar"
+    assert base.encode("windows-1252") in decoded
+    assert _pdf_escape("(12/2027)") not in decoded
+
+
+def test_pdf_sem_futuro_match_nao_mostra_nota():
+    decoded = _decoded_content_streams(gerar_pdf([_concurso_futuro()], ""))
+    assert "Aberto para formação futura".encode("windows-1252") not in decoded
