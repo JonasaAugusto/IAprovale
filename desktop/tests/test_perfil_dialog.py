@@ -295,8 +295,10 @@ def test_mascara_digitar_dois_digitos_mostra_barra_pendente(qtbot, dialog):
 
 
 def test_mascara_filtra_caracteres_nao_digitos(qtbot, dialog):
+    # Letras nunca entram no campo; com 2 dígitos válidos digitados ("1", "2"),
+    # a barra já foi inserida automaticamente antes da letra final ser filtrada.
     qtbot.keyClicks(dialog._data_formacao_futura, "1a2b")
-    assert dialog._data_formacao_futura.text() == "12"
+    assert dialog._data_formacao_futura.text() == "12/"
 
 
 def test_mascara_limita_a_seis_digitos(qtbot, dialog):

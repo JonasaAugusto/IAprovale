@@ -66,53 +66,52 @@ from app.ui.concurso_card import ConcursoCard
 
 _QUERY_PLACEHOLDER = "Ex: concurso de saúde com graduação em enfermagem"
 
-# Verbatim section copy from the Tkinter analog's `_mostrar_ajuda` tutorial.
+# Tutorial "Como pesquisar" reescrito (v1.5.2, WBUSCA-04): frases curtas,
+# tom direto, exemplos logo no início. Esta é também a referência de
+# paridade de copy para a futura web (mesma estrutura list[tuple[heading,
+# body]], mesmos temas: formação/cargo, onde buscar, buscar pra outra
+# pessoa, professor, combinar).
 _AJUDA_SECTIONS: list[tuple[str | None, str]] = [
     (
         None,
-        "Descreva o que você procura em português natural — não "
-        "precisa de comandos especiais, frases completas funcionam "
-        "melhor que palavras soltas.",
+        "Escreva do seu jeito, como se estivesse pedindo pra um "
+        "amigo. Exemplos: \"concurso de enfermagem em SP\", "
+        "\"vaga de professor de matemática\", \"técnico em "
+        "informática perto de mim\".",
     ),
     (
         "FORMAÇÃO OU CARGO",
-        "Cite a área ou cargo que te interessa: \"concurso de "
-        "enfermagem\", \"vaga de técnico em informática\", "
-        "\"professor de matemática\". Se você não citar nada, o "
-        "sistema usa automaticamente a formação salva no seu "
-        "perfil.",
+        "Diga o cargo ou a área — \"enfermagem\", \"técnico em "
+        "edificações\", \"analista de sistemas\". Não citou nada? "
+        "O sistema usa a formação salva no seu perfil.",
     ),
     (
         "ONDE BUSCAR",
-        "- Brasil todo: não cite estado nem cidade — a busca é "
-        "ampla.\n"
-        "- Um estado específico: cite o nome ou a sigla — "
-        "\"concurso em SP\", \"concurso na Bahia\".\n"
-        "- Uma cidade específica: cite cidade + estado — "
-        "\"concurso em Campinas, SP\".\n"
-        "- Uma região inteira: cite a região — \"concursos no "
-        "Nordeste\", \"concursos no Sul do país\".",
+        "- Brasil todo: não cite local.\n"
+        "- Um estado: \"em SP\", \"na Bahia\".\n"
+        "- Uma cidade: \"em Campinas, SP\".\n"
+        "- Uma região: \"no Nordeste\", \"no Sul do país\".",
     ),
     (
         "BUSCANDO PARA OUTRA PESSOA",
-        "Mencione a relação — \"concurso para minha esposa, que é "
+        "Só diga quem é: \"concurso para minha esposa, que é "
         "engenheira\", \"meu amigo é professor, tem vaga pra "
-        "ele?\". O sistema entende que a formação citada é de "
-        "outra pessoa, sem mexer no seu perfil salvo.",
+        "ele?\". A formação citada é da outra pessoa — seu perfil "
+        "salvo não muda.",
     ),
     (
         "CONCURSOS DE PROFESSOR",
-        "Cite \"professor\" ou \"docente\" na busca para focar em "
-        "vagas de magistério.",
+        "Cite \"professor\" ou \"docente\" pra focar em vagas de "
+        "magistério.",
     ),
     (
-        "COMBINE PARA IR MAIS FUNDO",
+        "COMBINE TUDO",
         "Junte formação + local numa frase só: \"vaga de "
         "enfermeiro em Recife\", \"técnico em edificações no "
-        "Paraná\", \"concursos de saúde no Nordeste\". Quanto mais "
-        "natural e específica a frase, melhor o resultado — o "
-        "sistema já filtra automaticamente só o que tem "
-        "inscrições abertas e aceita a sua formação.",
+        "Paraná\", \"concursos de saúde no Nordeste\". Frases "
+        "naturais e específicas dão os melhores resultados — o "
+        "sistema já filtra só o que tem inscrições abertas e "
+        "aceita a sua formação.",
     ),
 ]
 

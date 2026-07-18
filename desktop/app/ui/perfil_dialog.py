@@ -108,6 +108,18 @@ def _iso_to_mmaaaa(iso: str | None) -> str:
     return f"{mes}/{ano}"
 
 
+def _aplicar_mascara_data(texto: str) -> str:
+    """Máscara de digitação MM/AAAA (v1.5.2): filtra não-dígitos, limita a
+    6 dígitos, insere "/" automaticamente após os 2 primeiros. Função pura
+    (testável isolada) usada pelo handler de `textChanged` do campo de data
+    de formação. NÃO é validação — `validate()`/`_mmaaaa_to_iso` continuam
+    intactos e são quem barra formatos inválidos no Salvar."""
+    digitos = "".join(c for c in texto if c.isdigit())[:6]
+    if len(digitos) < 2:
+        return digitos
+    return f"{digitos[:2]}/{digitos[2:]}"
+
+
 class PerfilDialog(MessageBoxBase):
     """Formulário completo de perfil dentro de um MessageBoxBase scrollável."""
 
@@ -182,6 +194,13 @@ class PerfilDialog(MessageBoxBase):
         # Data de formação (v1.4.0) — gate do match futuro no backend.
         self._data_formacao_futura = LineEdit(form)
         self._data_formacao_futura.setPlaceholderText("MM/AAAA")
+        self._masking = False  # guarda de reentrância própria da máscara (v1.5.2)
+        # textEdited (não textChanged): dispara só em digitação/edição real
+        # do usuário, não em setText() programático (prepopular/testes) —
+        # evita a máscara interferir em fluxos que já escrevem MM/AAAA válido.
+        self._data_formacao_futura.textEdited.connect(
+            self._on_data_formacao_futura_changed
+        )
         col.addWidget(self._data_formacao_futura)
         _data_hint = CaptionLabel(
             "Data prevista de formação — usada pra te mostrar concursos que "
@@ -320,6 +339,25 @@ class PerfilDialog(MessageBoxBase):
                     edit.clear()
         finally:
             self._adjusting = False
+
+    # --- máscara MM/AAAA da data de formação (v1.5.2) ------------------
+
+    def _on_data_formacao_futura_changed(self, texto: str) -> None:
+        """Aplica `_aplicar_mascara_data` em tempo real ao digitar. Guarda de
+        reentrância própria (`self._masking`, NÃO `self._adjusting` — essa é
+        da lógica de níveis) evita recursão infinita no `setText` abaixo.
+        `setInputMask` foi propositalmente evitado (placeholder confuso pra
+        leigo); esta é uma máscara "leve" reaplicada a cada digitação."""
+        if self._masking:
+            return
+        self._masking = True
+        try:
+            novo = _aplicar_mascara_data(texto)
+            if novo != texto:
+                self._data_formacao_futura.setText(novo)
+            self._data_formacao_futura.setCursorPosition(len(novo))
+        finally:
+            self._masking = False
 
     # --- pré-popular / coletar ----------------------------------------
 
