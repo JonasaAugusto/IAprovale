@@ -23,6 +23,8 @@ the URL to the clipboard and shows "Copiado!" feedback for 1.5s via
 
 from __future__ import annotations
 
+import re
+
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CaptionLabel, CardWidget, FlowLayout, FluentIcon as FIF, PushButton, StrongBodyLabel
@@ -51,6 +53,18 @@ def _texto_futuro(concurso: dict) -> str:
     base = "Aberto para formação futura — quando você se formar"
     data = _fmt_data_futura(concurso.get("data_formacao_futura"))
     return f"{base} ({data})" if data else base
+
+
+def _fmt_prazo(prazo: str) -> str:
+    """"AAAA-MM-DD" (ISO, como o MCP às vezes retorna) -> "DD/MM/AAAA".
+    Qualquer outro formato (já BR, "sem data", "não informado") passa
+    INTACTO. Espelhado em pdf_export.py (copiado, não importado — mesmo
+    padrão de _fmt_localizacao) para manter paridade card<->PDF."""
+    m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", prazo)
+    if not m:
+        return prazo
+    ano, mes, dia = m.groups()
+    return f"{dia}/{mes}/{ano}"
 
 
 def _fmt_localizacao(concurso: dict) -> str:
@@ -153,7 +167,7 @@ class ConcursoCard(CardWidget):
         layout.addWidget(chip_host)
         self._render_chips()
 
-        layout.addWidget(BodyLabel(f"Inscrições até: {prazo}", self))
+        layout.addWidget(BodyLabel(f"Inscrições até: {_fmt_prazo(prazo)}", self))
 
         link_row = QHBoxLayout()
         link_label = BodyLabel(link or _LINK_MISSING_TEXT, self)

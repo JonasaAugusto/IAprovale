@@ -14,6 +14,7 @@ profile file which is unnecessary for this app.
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from pathlib import Path
 
@@ -46,6 +47,17 @@ def _texto_futuro(concurso: dict) -> str:
     base = "Aberto para formação futura — quando você se formar"
     data = _fmt_data_futura(concurso.get("data_formacao_futura"))
     return f"{base} ({data})" if data else base
+
+
+def _fmt_prazo(prazo: str) -> str:
+    """"AAAA-MM-DD" (ISO) -> "DD/MM/AAAA". Qualquer outro formato passa
+    INTACTO. Espelho de concurso_card._fmt_prazo (copiado, não importado —
+    mesmo padrão de _fmt_localizacao) para manter paridade card<->PDF."""
+    m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", prazo)
+    if not m:
+        return prazo
+    ano, mes, dia = m.groups()
+    return f"{dia}/{mes}/{ano}"
 
 
 def _fmt_localizacao(concurso: dict) -> str:
@@ -188,7 +200,7 @@ def gerar_pdf(
         # Prazo
         pdf.set_font("Helvetica", "", 10)
         pdf.cell(
-            text=f"Inscrições até: {prazo}",
+            text=f"Inscrições até: {_fmt_prazo(prazo)}",
             new_x="LMARGIN",
             new_y="NEXT",
         )
