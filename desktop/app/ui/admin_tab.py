@@ -21,6 +21,8 @@ status/error uses the inline `InfoBar` at the top of the tab.
 
 from __future__ import annotations
 
+import unicodedata
+
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
@@ -35,6 +37,7 @@ from qfluentwidgets import (
     MessageBoxBase,
     PrimaryPushButton,
     PushButton,
+    SearchLineEdit,
     StrongBodyLabel,
     isDarkTheme,
 )
@@ -44,6 +47,13 @@ from app.async_helpers import run_in_background
 from app.ui import styles
 
 _BLANK_USERNAME_MSG = "Informe um nome de usuário."
+
+
+def _normalizar(texto: str) -> str:
+    """Normaliza pra comparação de filtro: sem acentos, caixa ignorada
+    ("MÁRCOS" -> "marcos"). Espelho da ideia do normalizar() do backend."""
+    nfkd = unicodedata.normalize("NFKD", texto)
+    return "".join(c for c in nfkd if unicodedata.category(c) != "Mn").casefold()
 
 
 def _style_destructive(button) -> None:
@@ -176,6 +186,14 @@ class AdminTab(QWidget):
 
         layout.addWidget(add_row)
 
+        # Campo de busca (v1.5.1) — filtro client-side sobre a lista já
+        # carregada; o SearchLineEdit tem botão de limpar embutido (limpar
+        # dispara textChanged com "" -> lista completa volta).
+        self._search_entry = SearchLineEdit(self)
+        self._search_entry.setPlaceholderText("Procurar usuário...")
+        self._search_entry.textChanged.connect(self._on_filter_changed)
+        layout.addWidget(self._search_entry)
+
         self._list_container = QWidget(self)
         self._list_layout = QVBoxLayout(self._list_container)
         self._list_layout.setContentsMargins(0, 0, 0, 0)
@@ -193,6 +211,13 @@ class AdminTab(QWidget):
 
     def _render_users(self, users: list[dict]) -> None:
         self._users = users
+        self._rerender()
+
+    def _rerender(self) -> None:
+        # Sempre lê o texto ATUAL do campo de busca — assim o filtro digitado
+        # continua aplicado após qualquer ação que recarrega a lista
+        # (_load_users -> _render_users -> _rerender).
+        termo = _normalizar(self._search_entry.text())
 
         while self._list_layout.count():
             item = self._list_layout.takeAt(0)
@@ -200,9 +225,13 @@ class AdminTab(QWidget):
             if widget is not None:
                 widget.deleteLater()
 
-        for user in users:
-            self._list_layout.addWidget(self._build_user_row(user))
+        for user in self._users:
+            if not termo or termo in _normalizar(user["username"]):
+                self._list_layout.addWidget(self._build_user_row(user))
         self._list_layout.addStretch(1)
+
+    def _on_filter_changed(self, _text: str | None = None) -> None:
+        self._rerender()
 
     def _build_user_row(self, user: dict) -> CardWidget:
         row = CardWidget(self._list_container)

@@ -324,3 +324,76 @@ def test_add_button_disabled_then_reenabled_on_error(qtbot, tab, captured):
 
     assert tab._add_button.isEnabled() is True
     assert tab._error_bar.content == "Acesso negado."
+
+
+# ---------------------------------------------------------------------------
+# Busca de usuário (v1.5.1) — filtro client-side normalizado
+# ---------------------------------------------------------------------------
+
+
+def _rendered_usernames(tab) -> list[str]:
+    from qfluentwidgets import BodyLabel, CardWidget
+
+    nomes = []
+    for i in range(tab._list_layout.count()):
+        item = tab._list_layout.itemAt(i)
+        row = item.widget() if item is not None else None
+        if isinstance(row, CardWidget):
+            label = row.findChildren(BodyLabel)[0]
+            nomes.append(label.text())
+    return nomes
+
+
+def test_normalizar_remove_acentos_e_caixa():
+    assert admin_tab_module._normalizar("MÁRCOS") == "marcos"
+
+
+def test_filtro_acha_caixa_insensitive(qtbot, tab, captured):
+    users = [
+        {"user_id": "u1", "username": "marcoshenrique", "is_admin": False, "is_active": True},
+        {"user_id": "u2", "username": "ana", "is_admin": False, "is_active": True},
+    ]
+    captured.on_success(users)
+
+    tab._search_entry.setText("MARCOS")
+    assert _rendered_usernames(tab) == ["marcoshenrique"]
+
+
+def test_filtro_vazio_mostra_todos(qtbot, tab, captured):
+    users = [
+        {"user_id": "u1", "username": "marcoshenrique", "is_admin": False, "is_active": True},
+        {"user_id": "u2", "username": "ana", "is_admin": False, "is_active": True},
+    ]
+    captured.on_success(users)
+
+    tab._search_entry.setText("MARCOS")
+    assert _rendered_usernames(tab) == ["marcoshenrique"]
+
+    tab._search_entry.setText("")
+    assert _rendered_usernames(tab) == ["marcoshenrique", "ana"]
+
+
+def test_filtro_acha_com_acento_no_dado(qtbot, tab, captured):
+    users = [
+        {"user_id": "u1", "username": "joão", "is_admin": False, "is_active": True},
+        {"user_id": "u2", "username": "ana", "is_admin": False, "is_active": True},
+    ]
+    captured.on_success(users)
+
+    tab._search_entry.setText("joao")
+    assert _rendered_usernames(tab) == ["joão"]
+
+
+def test_filtro_persiste_apos_reload_sem_crash(qtbot, tab, captured):
+    users = [
+        {"user_id": "u1", "username": "marcoshenrique", "is_admin": False, "is_active": True},
+        {"user_id": "u2", "username": "ana", "is_admin": False, "is_active": True},
+    ]
+    captured.on_success(users)
+    tab._search_entry.setText("marcos")
+    assert _rendered_usernames(tab) == ["marcoshenrique"]
+
+    # Simula reload-after-mutate (_load_users -> _render_users): o filtro
+    # digitado continua aplicado.
+    captured.on_success(users)
+    assert _rendered_usernames(tab) == ["marcoshenrique"]
