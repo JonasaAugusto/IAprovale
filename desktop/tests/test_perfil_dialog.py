@@ -8,6 +8,7 @@ faz chamadas de rede.
 """
 
 import pytest
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget
 
 from app.ui.perfil_dialog import PerfilDialog
@@ -278,3 +279,47 @@ def test_visualizar_sem_arquivo_alterna_texto(dialog, monkeypatch):
 
 class _FakeApiError(Exception):
     detail = "Não foi possível consultar o CEP."
+
+
+# --- máscara MM/AAAA no campo de data de formação (v1.5.2) --------------
+
+
+def test_mascara_digitar_seis_digitos_insere_barra(qtbot, dialog):
+    qtbot.keyClicks(dialog._data_formacao_futura, "122027")
+    assert dialog._data_formacao_futura.text() == "12/2027"
+
+
+def test_mascara_digitar_dois_digitos_mostra_barra_pendente(qtbot, dialog):
+    qtbot.keyClicks(dialog._data_formacao_futura, "12")
+    assert dialog._data_formacao_futura.text() == "12/"
+
+
+def test_mascara_filtra_caracteres_nao_digitos(qtbot, dialog):
+    qtbot.keyClicks(dialog._data_formacao_futura, "1a2b")
+    assert dialog._data_formacao_futura.text() == "12"
+
+
+def test_mascara_limita_a_seis_digitos(qtbot, dialog):
+    qtbot.keyClicks(dialog._data_formacao_futura, "12202799")
+    assert dialog._data_formacao_futura.text() == "12/2027"
+
+
+def test_mascara_backspace_nao_trava(qtbot, dialog):
+    qtbot.keyClicks(dialog._data_formacao_futura, "122027")
+    assert dialog._data_formacao_futura.text() == "12/2027"
+
+    qtbot.keyClick(dialog._data_formacao_futura, Qt.Key_Backspace)
+    # Não deve travar/crashar; o texto continua só com dígitos + barra opcional.
+    texto = dialog._data_formacao_futura.text()
+    assert all(c.isdigit() or c == "/" for c in texto)
+
+    dialog._data_formacao_futura.clear()
+    assert dialog._data_formacao_futura.text() == ""
+
+
+def test_mascara_nao_quebra_validacao_e_coleta_existentes(qtbot, dialog):
+    """A máscara não deve interferir em validate()/coletar() já cobertos
+    acima — digitar via máscara produz o mesmo resultado que setText direto."""
+    qtbot.keyClicks(dialog._data_formacao_futura, "122027")
+    assert dialog.validate() is True
+    assert dialog.coletar()["data_formacao_futura"] == "2027-12"

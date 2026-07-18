@@ -363,6 +363,30 @@ def test_apagar_pdf_removes_file_and_hides_row(qtbot, tab, monkeypatch, tmp_path
     assert tab._pdf_row.isHidden() is True
 
 
+# ---------------------------------------------------------------------------
+# quick-260718-sp8: tutorial "Como pesquisar" reescrito (WBUSCA-04)
+# ---------------------------------------------------------------------------
+
+
+def test_ajuda_sections_preserva_estrutura_tuple():
+    for item in busca_tab_module._AJUDA_SECTIONS:
+        assert isinstance(item, tuple)
+        assert len(item) == 2
+        heading, body = item
+        assert heading is None or isinstance(heading, str)
+        assert isinstance(body, str) and body
+
+
+def test_ajuda_sections_primeiro_item_tem_heading_none():
+    heading, _body = busca_tab_module._AJUDA_SECTIONS[0]
+    assert heading is None
+
+
+def test_ajuda_sections_contem_exemplo_novo_caracteristico():
+    texto_completo = " ".join(body for _h, body in busca_tab_module._AJUDA_SECTIONS)
+    assert "como se estivesse pedindo" in texto_completo
+
+
 def test_popup_pdf_gerado_copy_is_short():
     """Copy do popup "PDF gerado" foi encurtada para só a frase de sucesso
     (v1.5.1) — verificada via `inspect.getsource` porque `MessageBox.exec()`
