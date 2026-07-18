@@ -487,8 +487,7 @@ class BuscaTab(QWidget):
         """
         box = MessageBox(
             "PDF gerado",
-            "O PDF foi gerado com sucesso. As ações Visualizar, Salvar e "
-            "Apagar estão disponíveis abaixo da área de pesquisa.",
+            "O PDF foi gerado com sucesso.",
             self.window(),
         )
         box.hideCancelButton()

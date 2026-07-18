@@ -10,6 +10,7 @@ reflete a nova (sem `root`): `stub(self, fn, on_success, on_error)`.
 
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass
 
 import pytest
@@ -360,3 +361,15 @@ def test_apagar_pdf_removes_file_and_hides_row(qtbot, tab, monkeypatch, tmp_path
     assert not pdf_path.exists()
     assert tab._pdf_path is None
     assert tab._pdf_row.isHidden() is True
+
+
+def test_popup_pdf_gerado_copy_is_short():
+    """Copy do popup "PDF gerado" foi encurtada para só a frase de sucesso
+    (v1.5.1) — verificada via `inspect.getsource` porque `MessageBox.exec()`
+    é um `QDialog.exec()` bloqueante em headless (mesmo padrão de
+    test_admin_tab.py para copy de diálogos).
+    """
+    src = inspect.getsource(BuscaTab._mostrar_popup_pdf_gerado)
+    assert "PDF gerado" in src
+    assert "O PDF foi gerado com sucesso." in src
+    assert "Visualizar, Salvar" not in src
