@@ -7,7 +7,7 @@ writes — gerar_pdf() returns bytes that are validated in-memory.
 import re
 import zlib
 
-from app.pdf_export import _ordenar_novos_primeiro, gerar_pdf
+from app.pdf_export import _fmt_prazo, _ordenar_novos_primeiro, gerar_pdf
 
 
 def _decoded_content_streams(pdf_bytes: bytes) -> bytes:
@@ -289,3 +289,36 @@ def test_pdf_futuro_match_sem_data_mostra_nota_sem_parenteses():
 def test_pdf_sem_futuro_match_nao_mostra_nota():
     decoded = _decoded_content_streams(gerar_pdf([_concurso_futuro()], ""))
     assert "Aberto para formação futura".encode("windows-1252") not in decoded
+
+
+# --- formatação BR do prazo (v1.5.2) --------------------------------------
+
+
+def test_fmt_prazo_iso_para_br():
+    assert _fmt_prazo("2026-12-14") == "14/12/2026"
+
+
+def test_fmt_prazo_ja_br_passa_intacto():
+    assert _fmt_prazo("31/12/2026") == "31/12/2026"
+
+
+def test_fmt_prazo_sem_data_passa_intacto():
+    assert _fmt_prazo("sem data") == "sem data"
+
+
+def test_fmt_prazo_nao_informado_passa_intacto():
+    assert _fmt_prazo("não informado") == "não informado"
+
+
+def test_gerar_pdf_mostra_prazo_iso_formatado_br():
+    resultado = [
+        {
+            "titulo": "Concurso Prazo ISO",
+            "cargos": [],
+            "datas": {"fim": "2026-12-14"},
+            "noticia": {"link": ""},
+            "is_new": False,
+        }
+    ]
+    decoded = _decoded_content_streams(gerar_pdf(resultado, ""))
+    assert "Inscrições até: 14/12/2026".encode("windows-1252") in decoded

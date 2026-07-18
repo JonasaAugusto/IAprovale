@@ -12,7 +12,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QLabel, QPushButton
 
-from app.ui.concurso_card import ConcursoCard, _OverflowChip
+from app.ui.concurso_card import ConcursoCard, _OverflowChip, _fmt_prazo
 
 
 def _chip_widgets(card):
@@ -252,3 +252,31 @@ def test_sem_futuro_match_nao_mostra_nota(qtbot):
     card = ConcursoCard(_base_concurso())
     qtbot.addWidget(card)
     assert _futuro_labels(card) == []
+
+
+# --- formatação BR do prazo (v1.5.2) --------------------------------------
+
+
+def test_fmt_prazo_iso_para_br():
+    assert _fmt_prazo("2026-12-14") == "14/12/2026"
+
+
+def test_fmt_prazo_ja_br_passa_intacto():
+    assert _fmt_prazo("31/12/2026") == "31/12/2026"
+
+
+def test_fmt_prazo_sem_data_passa_intacto():
+    assert _fmt_prazo("sem data") == "sem data"
+
+
+def test_fmt_prazo_nao_informado_passa_intacto():
+    assert _fmt_prazo("não informado") == "não informado"
+
+
+def test_card_mostra_prazo_iso_formatado_br(qtbot):
+    concurso = _base_concurso(cargos=[], datas={"fim": "2026-12-14"})
+    card = ConcursoCard(concurso)
+    qtbot.addWidget(card)
+
+    labels = [w.text() for w in card.findChildren(QLabel)]
+    assert any(t == "Inscrições até: 14/12/2026" for t in labels)
