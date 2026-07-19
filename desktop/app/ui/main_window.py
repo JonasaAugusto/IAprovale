@@ -20,6 +20,8 @@ Admin-tab visibility here is UX only (T-05-ADMINGATE) — the backend's
 
 from __future__ import annotations
 
+import json
+
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
@@ -27,6 +29,7 @@ from qfluentwidgets import (
     FluentIcon as FIF,
     InfoBar,
     InfoBarPosition,
+    MessageBox,
     Pivot,
     PushButton,
     TransparentToolButton,
@@ -34,6 +37,7 @@ from qfluentwidgets import (
 
 from app import api_client
 from app.async_helpers import run_in_background
+from app.config import APP_DIR
 from app.ui import styles
 from app.ui.admin_tab import AdminTab
 from app.ui.busca_tab import BuscaTab
@@ -42,6 +46,16 @@ from app.updater import check_for_update
 
 _BUSCA_ROUTE = "Busca"
 _ADMIN_ROUTE = "Admin"
+
+# Popup de anúncio do app web (v1.5.2) — mostrado uma vez por instalação,
+# gated pela flag persistida em APP_DIR/web_promo.json (T-sp8-01).
+_WEB_PROMO_FLAG_NAME = "web_promo.json"
+_WEB_PROMO_URL = "https://jonasaaugusto.github.io/IAprovale/"
+_WEB_PROMO_TITLE = "IAprovale na web!"
+_WEB_PROMO_TEXT = (
+    "Agora você pode acessar o IAprovale direto do navegador, sem instalar "
+    "nada. Quer experimentar?"
+)
 
 
 def visible_tab_labels(session) -> list[str]:
@@ -121,6 +135,41 @@ class MainWindow(QWidget):
         # Auto-update Nível 1 (U-3): check off-thread, never block/delay the
         # window; a failed/absent-update check is deliberately silent.
         run_in_background(check_for_update, self._on_update_check, lambda _exc: None)
+
+        # Popup de anúncio do app web (v1.5.2) — depois do update-check pra
+        # não competir com a InfoBar dele; só na primeira construção.
+        self._mostrar_popup_web()
+
+    # --- Popup do app web (uma vez por instalação, v1.5.2) --------------
+
+    def _mostrar_popup_web(self) -> None:
+        """Mostra o popup de anúncio da versão web, gated pela flag
+        persistida em `APP_DIR/web_promo.json`. Fatorado num método próprio
+        (padrão `_mostrar_popup_pdf_gerado` do busca_tab) para que os
+        testes possam monkeypatchá-lo — `MessageBox.exec()` é bloqueante em
+        headless. IO da flag é tolerante a falha (T-sp8-01): erro de
+        leitura trata como "não mostrado ainda"; erro de escrita é
+        silencioso — nunca crasha o app."""
+        flag_path = APP_DIR / _WEB_PROMO_FLAG_NAME
+
+        try:
+            ja_mostrado = json.loads(flag_path.read_text(encoding="utf-8")).get("shown", False)
+        except Exception:
+            ja_mostrado = False
+        if ja_mostrado:
+            return
+
+        box = MessageBox(_WEB_PROMO_TITLE, _WEB_PROMO_TEXT, self.window())
+        box.yesButton.setText("Sim")
+        box.cancelButton.setText("Prefiro continuar aqui")
+        if box.exec():
+            QDesktopServices.openUrl(QUrl(_WEB_PROMO_URL))
+
+        try:
+            flag_path.parent.mkdir(parents=True, exist_ok=True)
+            flag_path.write_text(json.dumps({"shown": True}), encoding="utf-8")
+        except Exception:
+            pass
 
     # --- Auto-update (Nível 1: check + notify, never self-replace) ------
 

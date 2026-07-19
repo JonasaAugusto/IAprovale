@@ -23,6 +23,7 @@ from app import main as main_module
 from app.main import _RootWindow
 from app.ui import busca_tab as busca_tab_module
 from app.ui import styles
+from app.ui.main_window import MainWindow
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,10 @@ def root(qtbot, monkeypatch):
     # `_show_main` builds a real MainWindow/BuscaTab below — stub it like
     # every other screen's run_in_background in this test suite.
     monkeypatch.setattr(busca_tab_module, "run_in_background", lambda *a, **k: None)
+    # Popup web (v1.5.2) would block on a real MessageBox.exec() modal in
+    # headless tests when `_show_main` builds a real MainWindow — stub it
+    # (same lição as the PDF-generated popup, quick 260716-w75).
+    monkeypatch.setattr(MainWindow, "_mostrar_popup_web", lambda self: None)
     window = _RootWindow()
     qtbot.addWidget(window)
     return window
