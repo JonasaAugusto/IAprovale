@@ -139,6 +139,13 @@ document.addEventListener("alpine:init", () => {
     maskData(event) {
       const digitos = (event.target.value.match(/\d/g) || []).join("").slice(0, 6);
       this.dataFutura = digitos.length < 2 ? digitos : `${digitos.slice(0, 2)}/${digitos.slice(2)}`;
+      // Escreve o valor mascarado no DOM de forma síncrona: se o novo valor
+      // normalizado for IGUAL ao estado atual (ex: backspace de "12/" pra
+      // "12", ambos normalizam pra "12/"), a atribuição acima é no-op pra
+      // reatividade do Alpine e o efeito do x-bind:value nunca re-executa —
+      // o DOM ficaria mostrando "12" com o estado em "12/". Mantém input e
+      // estado em lockstep mesmo quando o estado não muda.
+      event.target.value = this.dataFutura;
     },
 
     // Mock: preenche cidade/UF a partir de um mapa fixo de CEPs conhecidos,
