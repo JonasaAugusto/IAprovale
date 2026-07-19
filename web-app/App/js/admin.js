@@ -81,6 +81,14 @@ document.addEventListener("alpine:init", () => {
       return u.user_id === ACTING_ADMIN_ID;
     },
 
+    // Guard do botão Desativar: mesmo critério do Excluir (oculto na própria
+    // linha do admin logado) — sem isso o único admin de um sistema
+    // invite-only consegue revogar o próprio acesso (self-lockout). A regra
+    // real é reforçada server-side na Fase 7 (PATCH /auth/users).
+    podeDesativar(u) {
+      return u.is_active && !this.isSelf(u);
+    },
+
     mostrarErro(msg) {
       this.erro = msg;
     },
@@ -169,6 +177,13 @@ document.addEventListener("alpine:init", () => {
     },
 
     desativar(u) {
+      // Defesa em profundidade além do x-show="podeDesativar(u)" no HTML:
+      // bloqueia a auto-desativação mesmo se o método for alcançado por
+      // outro caminho (espelha a regra que o backend imporá na Fase 7).
+      if (this.isSelf(u)) {
+        this.mostrarErro("Você não pode desativar a sua própria conta.");
+        return;
+      }
       this._abrirConfirmacao(
         "Desativar usuário",
         `Tem certeza que deseja desativar ${u.username}? O acesso será revogado imediatamente e a sessão ativa dele será encerrada.`,

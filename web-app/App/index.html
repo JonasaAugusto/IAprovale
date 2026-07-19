@@ -258,10 +258,13 @@
             <div class="admin-user-actions">
               <button type="button" class="btn btn-ghost admin-action-btn" x-on:click="abrirRenomear(u)">Editar nome</button>
               <button type="button" class="btn btn-ghost admin-action-btn" x-on:click="gerarSenha(u)">Gerar nova senha</button>
+              <!-- podeDesativar(u) = u.is_active && !isSelf(u): mesmo guard
+                   do Excluir — o admin logado não pode se auto-desativar
+                   (self-lockout); regra reforçada server-side na Fase 7. -->
               <button
                 type="button"
                 class="btn btn-ghost admin-action-btn admin-action-destructive"
-                x-show="u.is_active"
+                x-show="podeDesativar(u)"
                 x-on:click="desativar(u)"
               >Desativar</button>
               <button
