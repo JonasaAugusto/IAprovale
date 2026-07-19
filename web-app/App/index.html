@@ -422,9 +422,16 @@
             <input type="text" x-model="formacaoFutura" placeholder="ex: Mestrado em Saúde Coletiva">
           </div>
           <div class="form-field">
+            <!-- x-bind:value (não x-model) de propósito: combinar x-model com
+                 um x-on:input próprio no MESMO campo cria uma corrida entre
+                 os dois listeners nativos de "input" — o listener interno do
+                 x-model pode sobrescrever o valor mascarado com o texto cru
+                 a cada tecla, fazendo a máscara "não aplicar" visualmente
+                 (bug reportado no reviewer). x-bind:value é só leitura de
+                 volta pro DOM; maskData() é o único escritor de dataFutura. -->
             <input
               type="text"
-              x-model="dataFutura"
+              x-bind:value="dataFutura"
               x-on:input="maskData($event)"
               placeholder="MM/AAAA"
               inputmode="numeric"
