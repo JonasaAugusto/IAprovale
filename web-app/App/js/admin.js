@@ -2,11 +2,11 @@
    IAprovale — /App Admin tab store (Alpine.js CSP build)
    Registered on alpine:init so the component exists before Alpine scans the
    DOM. Fully mocked (zero network calls): reproduces desktop/app/ui/admin_tab.py
-   anatomy — add-user row, accent/case-insensitive "Procurar usuário" filter,
-   per-row CRUD actions (Editar nome / Gerar nova senha / Desativar|Reativar /
+   anatomy, including add-user row, accent/case-insensitive "Procurar usuário"
+   filter, per-row CRUD actions (Editar nome / Gerar nova senha / Desativar|Reativar /
    Excluir, hidden on the acting admin's own row), and the three mock modals
    (password reveal, rename, destructive/state-changing confirms). Real
-   backend wiring (GET/POST/PATCH/DELETE /auth/users) is Phase 7/11 — this
+   backend wiring (GET/POST/PATCH/DELETE /auth/users) is Phase 7/11; this
    tab's own visibility here is also mock-only (T-06-10 in the plan's threat
    model; real server-side require_admin re-verification is out of scope).
    ========================================================================== */
@@ -14,7 +14,7 @@
 "use strict";
 
 document.addEventListener("alpine:init", () => {
-  // "jonas" é o admin logado nesta sessão mock — Excluir fica oculto na
+  // "jonas" é o admin logado nesta sessão mock; Excluir fica oculto na
   // própria linha dele, espelhando `user["user_id"] != self._session.user_id`.
   const ACTING_ADMIN_ID = 1;
 
@@ -27,7 +27,7 @@ document.addEventListener("alpine:init", () => {
   ];
 
   // Senha "gerada" fixa pro mock de revelação (Adicionar usuário / Gerar
-  // nova senha) — sem chamada de rede nesta fase.
+  // nova senha), sem chamada de rede nesta fase.
   const MOCK_PASSWORD = "Xk7-Trovao-42Q";
 
   Alpine.data("adminTab", () => ({
@@ -62,8 +62,8 @@ document.addEventListener("alpine:init", () => {
     // ("MÁRCOS" -> "marcos"). Espelha _normalizar() em admin_tab.py (que usa
     // unicodedata.normalize("NFKD", ...) + strip de combining marks +
     // casefold()). \p{M} (Unicode property escape, flag "u") casa toda
-    // marca de combinação restante após NFKD — evita listar manualmente o
-    // range de code points U+0300-U+036F.
+    // marca de combinação restante após NFKD, evitando listar manualmente
+    // o range de code points U+0300-U+036F.
     normalizar(s) {
       return (s || "")
         .normalize("NFKD")
