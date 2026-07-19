@@ -1,16 +1,25 @@
-# App Web (reservado — v2)
+# App Web — scaffolding mockado (Fase 6)
 
-Esta pasta está reservada para o futuro app web real do projeto (login + busca via navegador,
-direto no site — sem precisar instalar o app desktop).
+Shell do app web do IAprovale: abas **Busca** e **Admin** mais a view de
+**Perfil**, construídas com Alpine.js (build CSP) sobre o design system
+compartilhado em `../shared/`.
 
-Corresponde aos requisitos **WEB-01** e **WEB-02** do milestone v2 (ver `.planning/REQUIREMENTS.md`),
-hoje reconhecidos mas adiados — não fazem parte do roadmap atual (que é focado no app desktop, v1).
+Nesta fase tudo é **mock — zero chamadas de rede**: os resultados de busca, a
+lista de usuários do Admin e o salvamento do Perfil (localStorage) são
+simulações locais que estabelecem a anatomia da UI. A integração real com o
+backend (login, busca via IA, administração de usuários) chega nas próximas
+fases.
 
-Quando esse trabalho começar, ele vai reusar o mesmo backend FastAPI já construído em `../../backend/`.
+Estrutura:
 
-Ainda sem código aqui — só o caminho preparado.
+- `index.html` — shell (header, abas, painéis e modais)
+- `js/` — stores Alpine (`app.js`, `busca.js`, `perfil.js`, `admin.js`)
+- `css/` — estilos por área (`app.css`, `busca.css`, `perfil.css`, `admin.css`)
 
-Quando essa UI admin web for construída, ela deve seguir o mesmo princípio de ciclo de vida
-completo já estabelecido no cliente desktop: criar / listar / desativar ↔ reativar
-(deactivate/reactivate — toggle suave, sem exclusão definitiva) mais uma revelação de senha
-com botão de copiar para a área de transferência.
+A UI admin segue o mesmo ciclo de vida completo do cliente desktop: criar /
+listar / desativar ↔ reativar (toggle suave, sem exclusão acidental) mais a
+revelação de senha gerada com botão de copiar para a área de transferência.
+
+Observação: arquivos `README.md` são removidos do artefato publicado no
+GitHub Pages (ver `.github/workflows/pages.yml`) — este documento existe só
+no repositório.

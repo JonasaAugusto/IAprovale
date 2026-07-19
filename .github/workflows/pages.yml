@@ -37,6 +37,11 @@ jobs:
           cp -r web-app/Login _site/Login
           cp -r web-app/App _site/App
 
+          # READMEs are repo documentation, not site content — without this
+          # they would be publicly served (e.g. /App/README.md), exposing
+          # internal notes on the production site.
+          find _site -name "README.md" -delete
+
           # /homepage alias: redirect-to-root stub, NOT a full copy of the
           # homepage folder — a full copy would resolve the homepage's own
           # relative LOGIN_REDIRECT_URL ("Login/") to the non-existent
