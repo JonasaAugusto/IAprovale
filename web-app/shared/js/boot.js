@@ -32,10 +32,16 @@ try {
   } catch (e) {
     /* localStorage indisponível (ex.: modo privado) — segue sem persistir */
   }
+  // Valida o valor armazenado: qualquer coisa fora de "light"/"dark" (valor
+  // velho de outro build, tampering manual, outra ferramenta escrevendo a
+  // chave) viraria data-theme="qualquercoisa" — não casa com nenhum seletor
+  // :root[data-theme=...] em tokens.css e a página inteira renderiza sem
+  // design system. Valor inválido cai no prefers-color-scheme do sistema.
   var theme =
-    stored ||
-    (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light");
+    stored === "dark" || stored === "light"
+      ? stored
+      : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light");
   document.documentElement.setAttribute("data-theme", theme);
 })();
