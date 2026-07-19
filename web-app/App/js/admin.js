@@ -58,6 +58,31 @@ document.addEventListener("alpine:init", () => {
     confirmDestrutivo: false,
     confirmAction: null,
 
+    // --- foco acessível dos modais (contrato em js/app.js) -----------------
+
+    _modalTrigger: null, // gatilho original (foco volta nele ao fechar tudo)
+
+    // Registra o elemento que abriu o modal. Em cadeias de modais
+    // (confirmação -> revelar senha), o activeElement no segundo open é um
+    // botão DENTRO do modal anterior — nesse caso mantém o gatilho original
+    // (o botão da linha do usuário), pra onde o foco deve voltar no fim.
+    _registrarTrigger() {
+      const el = document.activeElement;
+      if (el && typeof el.closest === "function" && el.closest(".modal-backdrop")) return;
+      this._modalTrigger = el && typeof el.focus === "function" ? el : null;
+    },
+
+    _aoAbrirModal(dialogId) {
+      this.$nextTick(() => window.cfModalAberto(dialogId));
+    },
+
+    _aoFecharModal() {
+      const trigger = this._modalTrigger;
+      // cfModalFechado só restaura o foco (e limpa o lock de scroll) quando
+      // nenhum outro modal segue visível — cadeias ficam corretas de graça.
+      this.$nextTick(() => window.cfModalFechado(trigger));
+    },
+
     // Normaliza pra comparação de filtro: sem acentos, caixa ignorada
     // ("MÁRCOS" -> "marcos"). Espelha _normalizar() em admin_tab.py (que usa
     // unicodedata.normalize("NFKD", ...) + strip de combining marks +
@@ -120,10 +145,12 @@ document.addEventListener("alpine:init", () => {
     // --- revelar senha gerada ----------------------------------------------
 
     _revelarSenha(username, senha) {
+      this._registrarTrigger();
       this.revealUsername = username;
       this.revealPassword = senha;
       this.revealCopiado = false;
       this.revealOpen = true;
+      this._aoAbrirModal("reveal-dialog");
     },
 
     // writeText() como primeira instrução síncrona do handler (Pitfall 11);
@@ -138,16 +165,20 @@ document.addEventListener("alpine:init", () => {
     },
 
     fecharReveal() {
+      if (!this.revealOpen) return; // escape.window dispara mesmo fechado
       this.revealOpen = false;
+      this._aoFecharModal();
     },
 
     // --- editar nome ---------------------------------------------------------
 
     abrirRenomear(u) {
+      this._registrarTrigger();
       this.renameUser = u;
       this.renameValue = u.username;
       this.renameErro = "";
       this.renameOpen = true;
+      this._aoAbrirModal("rename-dialog");
     },
 
     confirmarRenomear() {
@@ -158,10 +189,13 @@ document.addEventListener("alpine:init", () => {
       }
       this.renameUser.username = novo;
       this.renameOpen = false;
+      this._aoFecharModal();
     },
 
     cancelarRenomear() {
+      if (!this.renameOpen) return; // escape.window dispara mesmo fechado
       this.renameOpen = false;
+      this._aoFecharModal();
     },
 
     // --- ações com confirmação (mock) --------------------------------------
@@ -220,23 +254,31 @@ document.addEventListener("alpine:init", () => {
     },
 
     _abrirConfirmacao(titulo, corpo, textoBotao, destrutivo, action) {
+      this._registrarTrigger();
       this.confirmTitulo = titulo;
       this.confirmCorpo = corpo;
       this.confirmTextoBotao = textoBotao;
       this.confirmDestrutivo = destrutivo;
       this.confirmAction = action;
       this.confirmOpen = true;
+      this._aoAbrirModal("confirm-dialog");
     },
 
     confirmarAcao() {
+      // A action pode abrir OUTRO modal (Gerar nova senha -> revelar senha):
+      // ela roda antes do fechamento, e cfModalFechado detecta o modal
+      // encadeado ainda visível e mantém lock/foco lá dentro.
       if (this.confirmAction) this.confirmAction();
       this.confirmOpen = false;
       this.confirmAction = null;
+      this._aoFecharModal();
     },
 
     cancelarConfirmacao() {
+      if (!this.confirmOpen) return; // escape.window dispara mesmo fechado
       this.confirmOpen = false;
       this.confirmAction = null;
+      this._aoFecharModal();
     },
   }));
 });

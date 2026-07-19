@@ -121,6 +121,27 @@ document.addEventListener("alpine:init", () => {
     ajudaSections: AJUDA_SECTIONS,
     results: MOCK_RESULTS,
 
+    _tutorialTrigger: null, // gatilho que abriu o tutorial (foco volta nele)
+
+    // Abre/fecha o modal "Como pesquisar" com o contrato de foco acessível
+    // compartilhado (cfModalAberto/cfModalFechado em js/app.js): foco entra
+    // no diálogo ao abrir e volta ao gatilho ao fechar. $nextTick garante
+    // que o x-show já foi aplicado quando o helper roda.
+    abrirTutorial() {
+      const el = document.activeElement;
+      this._tutorialTrigger = el && typeof el.focus === "function" ? el : null;
+      this.tutorialOpen = true;
+      this.$nextTick(() => window.cfModalAberto("tutorial-dialog"));
+    },
+
+    fecharTutorial() {
+      if (!this.tutorialOpen) return; // escape.window dispara mesmo fechado
+      this.tutorialOpen = false;
+      const trigger = this._tutorialTrigger;
+      this._tutorialTrigger = null;
+      this.$nextTick(() => window.cfModalFechado(trigger));
+    },
+
     // Mock search dispatch — no network call, just demonstrates the
     // skeleton loading state for ~900ms before re-showing the same mock
     // results (this plan is fully mocked; real wiring lands in Phase 7+).

@@ -254,6 +254,19 @@
 
 /* -------------------------------- MODAL ---------------------------------------- */
 
+/* Scroll lock enquanto um modal está aberto — aplicado/removido por
+   cfModalAberto/cfModalFechado (js/app.js), paridade com body.modal-open
+   da homepage. */
+body.modal-open {
+  overflow: hidden;
+}
+
+/* O diálogo recebe foco programático (tabindex="-1") quando não há outro
+   focável — sem anel de foco visual nesse caso (não é alvo de Tab). */
+.modal-dialog:focus {
+  outline: none;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
