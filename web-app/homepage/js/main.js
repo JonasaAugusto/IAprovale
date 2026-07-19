@@ -8,7 +8,7 @@
 /* ----------------------------- CONFIGURAÇÃO ------------------------------ */
 
 // COLOQUE O CAMINHO OU LINK AQUI
-const LOGIN_REDIRECT_URL = "#";
+const LOGIN_REDIRECT_URL = "Login/";
 
 const CONTACT_FORM_ACTION = "https://submit-form.com/1pIuu489V"; // Trocar aqui se quiser um formulário dedicado
 

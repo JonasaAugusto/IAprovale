@@ -1,10 +1,13 @@
-name: Deploy homepage to GitHub Pages
+name: Deploy web app to GitHub Pages
 
 on:
   push:
     branches: [main]
     paths:
       - "web-app/homepage/**"
+      - "web-app/Login/**"
+      - "web-app/App/**"
+      - "web-app/shared/**"
   workflow_dispatch:
 
 permissions:
@@ -26,13 +29,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Assemble Pages artifact
+        run: |
+          mkdir -p _site
+          cp -r web-app/homepage/. _site/
+          cp -r web-app/shared _site/shared
+          cp -r web-app/Login _site/Login
+          cp -r web-app/App _site/App
+
+          # /homepage alias: redirect-to-root stub, NOT a full copy of the
+          # homepage folder — a full copy would resolve the homepage's own
+          # relative LOGIN_REDIRECT_URL ("Login/") to the non-existent
+          # /homepage/Login/. The canonical homepage lives at "/" (via the
+          # cp -r above); /homepage/ only exists as a redirecting alias.
+          mkdir -p _site/homepage
+          cat > _site/homepage/index.html <<'HTML'
+          <!DOCTYPE html>
+          <html lang="pt-BR">
+          <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="refresh" content="0; url=../">
+            <link rel="canonical" href="../">
+            <title>IAprovale</title>
+          </head>
+          <body>
+            <p><a href="../">Continuar para a IAprovale</a></p>
+          </body>
+          </html>
+          HTML
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload homepage as Pages artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: web-app/homepage
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
