@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="IAprovale — busque concursos públicos compatíveis com a sua formação.">
+  <title>IAprovale — App</title>
+
+  <!-- Note: one directive that would restrict embedding in an iframe is
+       intentionally omitted here — it is silently ignored when set via
+       <meta http-equiv> (GitHub Pages can't send custom HTTP headers either).
+       Clickjacking is instead mitigated by shared/js/boot.js's frame-busting. -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://cdn.jsdelivr.net;
+    worker-src 'self' https://cdn.jsdelivr.net blob:;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src https://fonts.gstatic.com;
+    img-src 'self' data:;
+    connect-src 'self' https://iaprovalebackend.onrender.com;
+    form-action 'self';
+    base-uri 'self';
+    object-src 'none';
+  ">
+
+  <!-- Aplica o tema e faz o frame-busting antes da primeira pintura -->
+  <script src="../shared/js/boot.js"></script>
+
+  <!-- Google Fonts: Inter (corpo/UI) + Fraunces (títulos editoriais) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Logo oficial do app na guia do navegador (favicon) e em telas iOS -->
+  <link rel="icon" href="../homepage/assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="../homepage/assets/logo.png">
+  <link rel="apple-touch-icon" href="../homepage/assets/logo.png">
+
+  <link rel="stylesheet" href="../shared/css/tokens.css">
+  <link rel="stylesheet" href="../shared/css/base.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/busca.css">
+</head>
+<body class="full-height app-body" x-data="appShell">
+
+  <header class="app-header">
+    <div class="container header-inner">
+      <a class="brand" href="./" aria-label="IAprovale — app">
+        <span class="brand-mark" aria-hidden="true">
+          <img src="../homepage/assets/logo.png" alt="" width="24" height="24" class="brand-logo">
+        </span>
+        <span class="brand-name">IAprovale</span>
+      </a>
+
+      <div class="app-header-actions">
+        <!-- MOCK: o modal de Perfil é preenchido no plano 06-03; aqui é só o
+             gatilho + container vazio (#perfil-modal, ver abaixo do <main>). -->
+        <button class="btn btn-ghost app-header-btn" type="button" x-on:click="openPerfil()">Perfil</button>
+        <a class="btn btn-ghost app-header-btn" href="../Login/">Sair</a>
+
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Alternar tema claro/escuro">
+          <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <line x1="12" y1="2" x2="12" y2="4.5"></line>
+            <line x1="12" y1="19.5" x2="12" y2="22"></line>
+            <line x1="2" y1="12" x2="4.5" y2="12"></line>
+            <line x1="19.5" y1="12" x2="22" y2="12"></line>
+            <line x1="4.9" y1="4.9" x2="6.7" y2="6.7"></line>
+            <line x1="17.3" y1="17.3" x2="19.1" y2="19.1"></line>
+            <line x1="4.9" y1="19.1" x2="6.7" y2="17.3"></line>
+            <line x1="17.3" y1="6.7" x2="19.1" y2="4.9"></line>
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <nav class="app-tabbar container" aria-label="Navegação do app">
+      <button
+        type="button"
+        class="app-tab"
+        x-bind:class="{'is-active': tab === 'busca'}"
+        x-on:click="select('busca')"
+        x-bind:aria-selected="tab === 'busca' ? 'true' : 'false'"
+        role="tab"
+      >Busca</button>
+      <button
+        type="button"
+        class="app-tab"
+        x-bind:class="{'is-active': tab === 'admin'}"
+        x-on:click="select('admin')"
+        x-bind:aria-selected="tab === 'admin' ? 'true' : 'false'"
+        role="tab"
+      >Admin</button>
+    </nav>
+  </header>
+
+  <main class="app-main container">
+    <section id="panel-busca" x-show="tab === 'busca'" x-data="buscaTab" role="tabpanel" aria-label="Busca">
+      <!-- Task 2 (06-02) preenche a marcação completa da aba Busca aqui. -->
+    </section>
+
+    <!-- MOCK: aba Admin sempre visível nesta fase; o gating dinâmico por
+         is_admin (autorização server-side) é escopo da Fase 7 (WEB-04). -->
+    <section id="panel-admin" x-show="tab === 'admin'" role="tabpanel" aria-label="Admin">
+      <!-- Plano 06-03 preenche a marcação da aba Admin aqui. -->
+    </section>
+  </main>
+
+  <!-- MOCK: modal de Perfil — placeholder vazio nesta fase; o plano 06-03
+       preenche o conteúdo (dados do perfil, upload de currículo, etc.). -->
+  <div id="perfil-modal">
+    <!-- Plano 06-03 preenche o modal de Perfil aqui. -->
+  </div>
+
+  <!-- Alpine.js CSP build (sem unsafe-eval) — carregado primeiro para que os
+       componentes registrados via alpine:init existam antes da inicialização. -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.15.12/dist/cdn.min.js" integrity="sha384-MKLWq9B+VC0W3U8kDIBEsSu8uCnQ1B0UQpRaB+F7uR5ocXFbymMUKuLRntu5LLdu" crossorigin="anonymous"></script>
+  <script defer src="../shared/js/theme.js"></script>
+  <script defer src="js/app.js"></script>
+  <script defer src="js/busca.js"></script>
+</body>
+</html>

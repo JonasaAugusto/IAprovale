@@ -1,0 +1,126 @@
+/* ==========================================================================
+   IAprovale — /App shell layout
+   Shell-only styles (sticky header, brand, header actions, tab bar, panel
+   container, responsive breakpoints). Tokens only — no color literals.
+   Busca-tab-specific styles live in css/busca.css; Admin-tab styles are
+   added by plan 06-03.
+   ========================================================================== */
+
+/* ------------------------------ APP VIEWPORT ------------------------------- */
+
+/* iOS Safari 100vh doesn't account for browser chrome (PITFALLS.md Pitfall 12) —
+   always set the 100vh fallback line immediately before the 100dvh line. */
+.app-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* --------------------------------- HEADER ----------------------------------- */
+
+/* Sticky (not fixed like .site-header on homepage/Login) — the tab bar and
+   main content flow naturally beneath it without manual padding-top offsets. */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--header-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  transition: var(--theme-transition);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.app-header-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.88rem;
+}
+
+/* --------------------------------- TAB BAR ---------------------------------- */
+
+.app-tabbar {
+  display: flex;
+  gap: 0.25rem;
+  padding-bottom: 0;
+}
+
+.app-tab {
+  flex: 1;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  border-bottom: 3px solid transparent;
+  transition: var(--theme-transition), border-color 0.18s ease;
+}
+
+.app-tab:hover {
+  color: var(--text-strong);
+}
+
+.app-tab.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* -------------------------------- PANELS ------------------------------------ */
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  padding-block: 1.5rem 3rem;
+}
+
+#panel-busca,
+#panel-admin {
+  width: 100%;
+}
+
+/* ------------------------------- RESPONSIVO ---------------------------------- */
+
+@media (max-width: 640px) {
+  .header-inner {
+    padding-block: 0.6rem;
+  }
+
+  .app-header-actions {
+    gap: 0.4rem;
+  }
+
+  .app-header-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+  }
+
+  .brand-name {
+    font-size: 1rem;
+  }
+
+  .app-tab {
+    padding: 0.65rem 0.5rem;
+    font-size: 0.88rem;
+  }
+
+  .app-main {
+    padding-block: 1rem 2.5rem;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .app-header-btn {
+    min-height: 44px;
+  }
+
+  .app-tab {
+    min-height: 44px;
+  }
+}
