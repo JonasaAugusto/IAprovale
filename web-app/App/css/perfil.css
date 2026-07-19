@@ -1,0 +1,182 @@
+/* ==========================================================================
+   IAprovale — /App Perfil form (mocked)
+   Extends the shared .modal-backdrop/.modal-dialog primitives (defined in
+   css/busca.css, loaded before this file) with the Perfil-specific form
+   layout: section headings, cumulative escolaridade checkboxes, the "Qual?"
+   reveal fields, CEP row, selects, currículo attach. Tokens only, no
+   hardcoded color literals — mobile-first single column.
+   ========================================================================== */
+
+/* --------------------------------- DIALOG ------------------------------------ */
+
+.perfil-dialog {
+  max-width: 640px;
+}
+
+.perfil-body {
+  text-align: left;
+}
+
+.perfil-sub {
+  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.perfil-nota,
+.perfil-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.8rem;
+}
+
+/* ------------------------------ SECTION TITLES -------------------------------- */
+
+.perfil-section-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-strong);
+  margin-top: 1.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.perfil-body > .perfil-section-title:first-of-type {
+  margin-top: 0.4rem;
+}
+
+/* -------------------------------- ESCOLARIDADE --------------------------------- */
+
+.perfil-check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0;
+  font-size: 0.95rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.perfil-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Campo "Qual?" — só aparece quando o nível correspondente está marcado.
+   x-transition (Alpine) cuida da transição de opacidade/escala; aqui só o
+   recuo visual que liga o campo ao checkbox pai. */
+.perfil-curso-field {
+  margin-left: 1.9rem;
+  margin-bottom: 0.6rem;
+}
+
+/* ---------------------------------- SELECTS ------------------------------------ */
+
+.perfil-body .form-field select {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-strong);
+  background: var(--input-bg);
+  color: var(--text-strong);
+  transition: var(--theme-transition);
+}
+
+.perfil-body .form-field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* ----------------------------------- CEP --------------------------------------- */
+
+.perfil-cep-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.perfil-cep-input {
+  flex: 1;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-strong);
+  background: var(--input-bg);
+  color: var(--text-strong);
+  transition: var(--theme-transition);
+}
+
+.perfil-cep-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.perfil-cep-status {
+  font-size: 0.82rem;
+  color: var(--accent);
+  margin-bottom: 0.8rem;
+  min-height: 1em;
+}
+
+/* -------------------------------- CURRÍCULO ------------------------------------- */
+
+.perfil-anexar-btn {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  margin-bottom: 0.6rem;
+}
+
+/* Input de arquivo nativo empilhado (transparente) sobre o botão estilizado —
+   clique no label ativa o seletor de arquivo do SO. */
+.perfil-file-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.perfil-arquivo-nome {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+
+/* --------------------------------- AÇÕES ---------------------------------------- */
+
+.perfil-actions-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.4rem;
+}
+
+.perfil-actions-row .btn {
+  flex: 1;
+}
+
+/* ------------------------------- RESPONSIVO -------------------------------------- */
+
+@media (max-width: 480px) {
+  .perfil-cep-row {
+    flex-direction: column;
+  }
+
+  .perfil-actions-row {
+    flex-direction: column;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .perfil-check input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+  }
+
+  .perfil-check {
+    min-height: 44px;
+  }
+}

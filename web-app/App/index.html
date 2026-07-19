@@ -40,6 +40,7 @@
   <link rel="stylesheet" href="../shared/css/base.css">
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/busca.css">
+  <link rel="stylesheet" href="css/perfil.css">
 </head>
 <body class="full-height app-body" x-data="appShell">
 
@@ -53,9 +54,12 @@
       </a>
 
       <div class="app-header-actions">
-        <!-- MOCK: o modal de Perfil é preenchido no plano 06-03; aqui é só o
-             gatilho + container vazio (#perfil-modal, ver abaixo do <main>). -->
-        <button class="btn btn-ghost app-header-btn" type="button" x-on:click="openPerfil()">Perfil</button>
+        <!-- O modal de Perfil (#perfil-modal, ver abaixo do <main>) vive em
+             seu próprio x-data="perfilForm" — componentes CSP irmãos não
+             conseguem chamar métodos um do outro, então o gatilho despacha
+             um CustomEvent de window ($dispatch) que o modal escuta
+             (x-on:open-perfil.window). -->
+        <button class="btn btn-ghost app-header-btn" type="button" x-on:click="$dispatch('open-perfil')">Perfil</button>
         <a class="btn btn-ghost app-header-btn" href="../Login/">Sair</a>
 
         <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Alternar tema claro/escuro">
@@ -206,10 +210,138 @@
     </section>
   </main>
 
-  <!-- MOCK: modal de Perfil — placeholder vazio nesta fase; o plano 06-03
-       preenche o conteúdo (dados do perfil, upload de currículo, etc.). -->
-  <div id="perfil-modal">
-    <!-- Plano 06-03 preenche o modal de Perfil aqui. -->
+  <!-- MOCK: formulário de Perfil completo, espelhando desktop/app/ui/perfil_dialog.py.
+       Sem persistência real nesta fase (Salvar só fecha) — PUT /profile é Fase 7+. -->
+  <div id="perfil-modal" x-data="perfilForm" x-on:open-perfil.window="open = true">
+    <div
+      class="modal-backdrop"
+      x-show="open"
+      x-on:click.self="open = false"
+      x-on:keydown.escape.window="open = false"
+    >
+      <div class="modal-dialog perfil-dialog" role="dialog" aria-modal="true" aria-labelledby="perfil-title">
+        <div class="modal-header">
+          <h2 id="perfil-title">Perfil</h2>
+          <button type="button" class="modal-close" x-on:click="cancelar()" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-body perfil-body">
+          <p class="perfil-sub">Quanto mais completo, melhores são as buscas.</p>
+          <p class="perfil-nota">
+            Após preencher, na busca escreva só o que quer mudar — localização, cargo,
+            região, órgão. O resto a IA usa do seu perfil.
+          </p>
+
+          <h3 class="perfil-section-title">Formação</h3>
+
+          <label class="perfil-check">
+            <input type="checkbox" x-model="niveis.fundamental" x-on:change="onNivelToggled('fundamental')">
+            Ensino Fundamental
+          </label>
+
+          <label class="perfil-check">
+            <input type="checkbox" x-model="niveis.medio" x-on:change="onNivelToggled('medio')">
+            Ensino Médio
+          </label>
+
+          <label class="perfil-check">
+            <input type="checkbox" x-model="niveis.tecnico" x-on:change="onNivelToggled('tecnico')">
+            Técnico
+          </label>
+          <div class="form-field perfil-curso-field" x-show="niveis.tecnico" x-transition>
+            <input type="text" x-model="cursos.tecnico" x-bind:disabled="!niveis.tecnico" placeholder="Qual? (ex: Enfermagem)">
+          </div>
+
+          <label class="perfil-check">
+            <input type="checkbox" x-model="niveis.superior" x-on:change="onNivelToggled('superior')">
+            Graduação (Superior)
+          </label>
+          <div class="form-field perfil-curso-field" x-show="niveis.superior" x-transition>
+            <input type="text" x-model="cursos.superior" x-bind:disabled="!niveis.superior" placeholder="Qual? (ex: Enfermagem)">
+          </div>
+
+          <label class="perfil-check">
+            <input type="checkbox" x-model="niveis.pos" x-on:change="onNivelToggled('pos')">
+            Pós-graduação
+          </label>
+          <div class="form-field perfil-curso-field" x-show="niveis.pos" x-transition>
+            <input type="text" x-model="cursos.pos" x-bind:disabled="!niveis.pos" placeholder="Qual? (ex: Enfermagem)">
+          </div>
+
+          <h3 class="perfil-section-title">Formação futura / em andamento</h3>
+          <div class="form-field">
+            <input type="text" x-model="formacaoFutura" placeholder="ex: Mestrado em Saúde Coletiva">
+          </div>
+          <div class="form-field">
+            <input
+              type="text"
+              x-model="dataFutura"
+              x-on:input="maskData($event)"
+              placeholder="MM/AAAA"
+              inputmode="numeric"
+              maxlength="7"
+              aria-label="Data prevista de formação (MM/AAAA)"
+            >
+          </div>
+          <p class="perfil-hint">
+            Data prevista de formação — usada pra te mostrar concursos que você poderá
+            prestar quando se formar.
+          </p>
+
+          <h3 class="perfil-section-title">Localização</h3>
+          <div class="perfil-cep-row">
+            <input type="text" class="perfil-cep-input" x-model="cep" x-on:change="buscarCep()" placeholder="CEP" maxlength="9" aria-label="CEP">
+            <button type="button" class="btn btn-ghost" x-on:click="buscarCep()">Buscar</button>
+          </div>
+          <p class="perfil-cep-status" x-show="cepStatus" x-text="cepStatus"></p>
+          <div class="form-field">
+            <input type="text" x-model="cidade" placeholder="Cidade">
+          </div>
+          <div class="form-field">
+            <select x-model="uf" aria-label="UF">
+              <option value="">UF</option>
+              <template x-for="opt in ufs" x-bind:key="opt">
+                <option x-bind:value="opt" x-text="opt"></option>
+              </template>
+            </select>
+          </div>
+
+          <h3 class="perfil-section-title">Disposição para mudar</h3>
+          <div class="form-field">
+            <select x-model="mobilidade" aria-label="Disposição para mudar">
+              <template x-for="opt in mobilidadeOptions" x-bind:key="opt.label">
+                <option x-bind:value="opt.value" x-text="opt.label"></option>
+              </template>
+            </select>
+          </div>
+          <p class="perfil-nota">
+            Isto afeta a busca: com "Só na minha cidade" ou "No meu estado", quando você
+            não digitar um local na pesquisa, o app mostra concursos do seu estado. Com
+            "Qualquer lugar", busca no Brasil inteiro.
+          </p>
+
+          <h3 class="perfil-section-title">Áreas de interesse</h3>
+          <div class="form-field">
+            <input type="text" x-model="areasInteresse" placeholder="ex: saúde, educação">
+          </div>
+
+          <h3 class="perfil-section-title">Currículo</h3>
+          <p class="perfil-nota">Cole/escreva, ou anexe um arquivo (PDF/TXT). Um por conta.</p>
+          <label class="btn btn-ghost perfil-anexar-btn">
+            Anexar arquivo (PDF/TXT)
+            <input type="file" class="perfil-file-input" accept=".pdf,.txt" x-on:change="anexarCurriculo($event)" aria-label="Anexar currículo">
+          </label>
+          <p class="perfil-arquivo-nome" x-show="curriculoNomeArquivo" x-text="curriculoNomeArquivo"></p>
+          <div class="form-field">
+            <textarea x-model="curriculoTexto" placeholder="Cole ou escreva seu currículo aqui..."></textarea>
+          </div>
+
+          <div class="perfil-actions-row">
+            <button type="button" class="btn btn-primary" x-on:click="salvar()">Salvar</button>
+            <button type="button" class="btn btn-ghost" x-on:click="cancelar()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Alpine.js CSP build (sem unsafe-eval) — carregado primeiro para que os
@@ -218,5 +350,6 @@
   <script defer src="../shared/js/theme.js"></script>
   <script defer src="js/app.js"></script>
   <script defer src="js/busca.js"></script>
+  <script defer src="js/perfil.js"></script>
 </body>
 </html>
