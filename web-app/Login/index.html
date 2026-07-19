@@ -30,10 +30,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Logo oficial do app na guia do navegador (favicon) e em telas iOS -->
-  <link rel="icon" href="../homepage/assets/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" href="../homepage/assets/logo.png">
-  <link rel="apple-touch-icon" href="../homepage/assets/logo.png">
+  <!-- Logo oficial do app na guia do navegador (favicon) e em telas iOS.
+       Caminho "../assets/..." (NÃO "../homepage/assets/..."): no artifact
+       montado pelo workflow, o conteúdo de web-app/homepage/ é copiado pra
+       RAIZ do _site (a homepage "canônica" vive em "/"), e /homepage/ é só
+       um stub de redirect sem assets próprios (ver .github/workflows/pages.yml
+       e a decisão registrada em 06-01-SUMMARY.md) — usar "../homepage/assets/"
+       aqui resultava em 404 no logo/favicon do site publicado. -->
+  <link rel="icon" href="../assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="../assets/logo.png">
+  <link rel="apple-touch-icon" href="../assets/logo.png">
 
   <link rel="stylesheet" href="../shared/css/tokens.css">
   <link rel="stylesheet" href="../shared/css/base.css">
@@ -45,7 +51,7 @@
     <div class="container header-inner">
       <a class="brand" href="../" aria-label="IAprovale — início">
         <span class="brand-mark" aria-hidden="true">
-          <img src="../homepage/assets/logo.png" alt="" width="24" height="24" class="brand-logo">
+          <img src="../assets/logo.png" alt="" width="24" height="24" class="brand-logo">
         </span>
         <span class="brand-name">IAprovale</span>
       </a>
