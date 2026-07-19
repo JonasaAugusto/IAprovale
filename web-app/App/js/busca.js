@@ -193,12 +193,18 @@ document.addEventListener("alpine:init", () => {
     // PITFALLS.md Pitfall 11: writeText() must be the FIRST synchronous
     // statement in the click handler, before any await, or the browser can
     // lose the "user gesture" context and silently reject the call.
+    // O feedback "Copiado!" só aparece se a Promise resolver — sem falso
+    // sucesso quando a escrita é rejeitada (permissão negada, contexto
+    // não-seguro em teste local, etc.), e sem unhandled rejection no console.
     copiar(c) {
-      navigator.clipboard.writeText(c.noticia.link);
-      c.copied = true;
-      setTimeout(() => {
-        c.copied = false;
-      }, 1500);
+      navigator.clipboard.writeText(c.noticia.link).then(() => {
+        c.copied = true;
+        setTimeout(() => {
+          c.copied = false;
+        }, 1500);
+      }).catch(() => {
+        /* cópia falhou: mantém "Copiar link" (sem falso "Copiado!") */
+      });
     },
   }));
 });

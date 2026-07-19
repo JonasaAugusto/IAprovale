@@ -118,9 +118,15 @@ document.addEventListener("alpine:init", () => {
       this.revealOpen = true;
     },
 
+    // writeText() como primeira instrução síncrona do handler (Pitfall 11);
+    // "Copiado!" só aparece se a Promise resolver — dizer ao admin que a
+    // senha foi copiada quando não foi seria um falso sucesso perigoso.
     copiarSenha() {
-      navigator.clipboard.writeText(this.revealPassword);
-      this.revealCopiado = true;
+      navigator.clipboard.writeText(this.revealPassword).then(() => {
+        this.revealCopiado = true;
+      }).catch(() => {
+        /* cópia falhou: mantém "Copiar senha" (sem falso "Copiado!") */
+      });
     },
 
     fecharReveal() {
