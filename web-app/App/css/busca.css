@@ -1,0 +1,359 @@
+/* ==========================================================================
+   IAprovale — /App Busca tab (mocked)
+   Query/actions rows, result card anatomy (NOVO pill, cargo chips, futuro
+   note, copiar link), the tutorial modal, and the skeleton loading card.
+   Tokens only, mobile-first. Staggered card entrance is automatically
+   gated by base.css's prefers-reduced-motion block (universal selector).
+   ========================================================================== */
+
+/* ------------------------------ QUERY ROW ----------------------------------- */
+
+.busca-query-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.busca-input {
+  flex: 1 1 260px;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-strong);
+  background: var(--input-bg);
+  color: var(--text-strong);
+  transition: var(--theme-transition);
+}
+
+.busca-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.75;
+}
+
+.busca-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* ---------------------------- ACTIONS ROW ------------------------------------ */
+
+.busca-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.busca-link-ajuda {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.busca-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  opacity: 0.75;
+}
+
+.busca-switch-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.busca-switch-track {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-strong);
+  transition: var(--theme-transition);
+}
+
+.busca-switch-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.18s ease;
+}
+
+.busca-switch-input:checked + .busca-switch-track::after {
+  transform: translateX(16px);
+  background: var(--accent);
+}
+
+.busca-btn-pdf[disabled],
+.busca-switch {
+  cursor: not-allowed;
+}
+
+.busca-btn-pdf[disabled] {
+  opacity: 0.55;
+}
+
+/* ------------------------------- SKELETON ------------------------------------ */
+
+.busca-skeleton-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.busca-skeleton-card {
+  min-height: 168px;
+}
+
+/* -------------------------------- EMPTY --------------------------------------- */
+
+.busca-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2.5rem 0;
+}
+
+/* -------------------------------- RESULTS -------------------------------------- */
+
+.busca-results {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Staggered entrance — reduced-motion users get instant (0.01ms) transitions
+   via base.css's universal `*` rule, no separate media query needed here. */
+.concurso-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--card-shadow);
+  padding: 1.15rem 1.25rem;
+  position: relative;
+  opacity: 0;
+  animation: concurso-card-in 0.4s ease forwards;
+  transition: var(--theme-transition);
+}
+
+.busca-results .concurso-card:nth-child(1) { animation-delay: 0.03s; }
+.busca-results .concurso-card:nth-child(2) { animation-delay: 0.1s; }
+.busca-results .concurso-card:nth-child(3) { animation-delay: 0.17s; }
+.busca-results .concurso-card:nth-child(n+4) { animation-delay: 0.24s; }
+
+@keyframes concurso-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.concurso-card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.concurso-card-titulo {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--text-strong);
+}
+
+.concurso-badge-novo {
+  flex-shrink: 0;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border-radius: 999px;
+  padding: 0.22rem 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.concurso-card-localizacao {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.concurso-card-futuro {
+  margin-top: 0.65rem;
+  border-left: 3px solid var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.concurso-card-cargos-label {
+  margin-top: 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.concurso-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.cargo-chip {
+  background: var(--bg-soft);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.32rem 0.75rem;
+  font-size: 0.78rem;
+}
+
+.cargo-chip-overflow {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.cargo-chip-overflow:hover {
+  border-color: var(--accent);
+}
+
+.concurso-card-prazo {
+  margin-top: 0.85rem;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.concurso-card-link-row {
+  margin-top: 0.9rem;
+}
+
+.concurso-card-copiar {
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* -------------------------------- MODAL ---------------------------------------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--backdrop);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 100;
+}
+
+.modal-dialog {
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--bg-elev);
+  border-radius: var(--radius-md);
+  box-shadow: var(--card-shadow);
+  padding: 1.5rem;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+  font-size: 1.15rem;
+}
+
+.modal-close {
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--text-muted);
+  padding: 0.15rem 0.5rem;
+}
+
+.modal-close:hover {
+  color: var(--text-strong);
+}
+
+.ajuda-section {
+  margin-bottom: 1.1rem;
+}
+
+.ajuda-section:last-child {
+  margin-bottom: 0;
+}
+
+.ajuda-section h3 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+
+.ajuda-section p {
+  white-space: pre-line;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+/* ------------------------------- RESPONSIVO ------------------------------------- */
+
+@media (max-width: 640px) {
+  .busca-query-row {
+    flex-direction: column;
+  }
+
+  .busca-input,
+  .busca-btn-buscar,
+  .busca-btn-perfil {
+    width: 100%;
+  }
+
+  .busca-actions-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .concurso-card {
+    padding: 1rem;
+  }
+
+  .modal-dialog {
+    padding: 1.15rem;
+    max-height: 90vh;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .busca-link-ajuda,
+  .cargo-chip-overflow,
+  .concurso-card-copiar,
+  .modal-close {
+    min-height: 44px;
+  }
+}

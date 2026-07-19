@@ -99,7 +99,104 @@
 
   <main class="app-main container">
     <section id="panel-busca" x-show="tab === 'busca'" x-data="buscaTab" role="tabpanel" aria-label="Busca">
-      <!-- Task 2 (06-02) preenche a marcação completa da aba Busca aqui. -->
+
+      <div class="busca-query-row">
+        <input
+          type="text"
+          class="busca-input"
+          x-model="query"
+          placeholder="Ex: concurso de saúde com graduação em enfermagem"
+          aria-label="O que você está procurando"
+        >
+        <button type="button" class="btn btn-primary busca-btn-buscar" x-on:click="buscar()">Buscar</button>
+        <button type="button" class="btn btn-ghost busca-btn-perfil" x-on:click="buscarComPerfil()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"></path>
+          </svg>
+          Buscar com meu perfil
+        </button>
+      </div>
+
+      <div class="busca-actions-row">
+        <button type="button" class="busca-link-ajuda" x-on:click="tutorialOpen = true">Como pesquisar</button>
+
+        <label class="busca-switch">
+          <input type="checkbox" class="busca-switch-input" disabled aria-label="Usar meu currículo (indisponível nesta fase)">
+          <span class="busca-switch-track" aria-hidden="true"></span>
+          <span class="busca-switch-label">Usar meu currículo</span>
+        </label>
+
+        <button type="button" class="btn btn-ghost busca-btn-pdf" disabled aria-disabled="true">Gerar PDF</button>
+      </div>
+
+      <!-- Skeleton de carregamento (mock): visível enquanto loading=true -->
+      <div class="busca-skeleton-list" x-show="loading" aria-hidden="true">
+        <div class="concurso-card skeleton busca-skeleton-card"></div>
+        <div class="concurso-card skeleton busca-skeleton-card"></div>
+        <div class="concurso-card skeleton busca-skeleton-card"></div>
+      </div>
+
+      <p class="busca-empty" x-show="isEmpty">Nenhum concurso encontrado com esses critérios. Tente ajustar sua busca ou sua formação salva.</p>
+
+      <div class="busca-results" x-show="!loading">
+        <template x-for="c in results" x-bind:key="c.titulo">
+          <article class="concurso-card">
+            <div class="concurso-card-title-row">
+              <h3 class="concurso-card-titulo" x-text="c.titulo"></h3>
+              <span class="concurso-badge-novo" x-show="c.is_new">NOVO</span>
+            </div>
+
+            <p class="concurso-card-localizacao" x-show="localizacao(c)" x-text="'Localização: ' + localizacao(c)"></p>
+
+            <p class="concurso-card-futuro" x-show="c.futuro_match" x-text="textoFuturo(c)"></p>
+
+            <p class="concurso-card-cargos-label" x-show="cargos(c).length > 0" x-text="cargosLabel(c)"></p>
+
+            <div class="concurso-card-chips">
+              <template x-for="cargo in cargosVisiveis(c)" x-bind:key="cargo">
+                <span class="cargo-chip" x-text="cargo"></span>
+              </template>
+              <button
+                type="button"
+                class="cargo-chip cargo-chip-overflow"
+                x-show="overflow(c) > 0"
+                x-on:click="toggleCargos(c)"
+                x-text="c.expanded ? 'mostrar menos' : ('+' + overflow(c) + ' outros')"
+              ></button>
+            </div>
+
+            <p class="concurso-card-prazo" x-text="'Inscrições até: ' + prazoBR(c.datas.fim)"></p>
+
+            <div class="concurso-card-link-row" x-show="c.noticia.link">
+              <button type="button" class="btn btn-ghost concurso-card-copiar" x-on:click="copiar(c)" x-text="c.copied ? 'Copiado!' : 'Copiar link'"></button>
+            </div>
+          </article>
+        </template>
+      </div>
+
+      <!-- Modal "Como pesquisar" (WBUSCA-04, copy verbatim de busca_tab.py) -->
+      <div
+        class="modal-backdrop"
+        x-show="tutorialOpen"
+        x-on:click.self="tutorialOpen = false"
+        x-on:keydown.escape.window="tutorialOpen = false"
+      >
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+          <div class="modal-header">
+            <h2 id="tutorial-title">Como pesquisar</h2>
+            <button type="button" class="modal-close" x-on:click="tutorialOpen = false" aria-label="Fechar">×</button>
+          </div>
+          <div class="modal-body">
+            <template x-for="section in ajudaSections" x-bind:key="section.body">
+              <div class="ajuda-section">
+                <h3 x-show="section.heading" x-text="section.heading"></h3>
+                <p x-text="section.body"></p>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- MOCK: aba Admin sempre visível nesta fase; o gating dinâmico por
