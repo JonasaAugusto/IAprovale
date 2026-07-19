@@ -1,0 +1,55 @@
+/* ==========================================================================
+   IAprovale — /Login page-specific layout
+   Only Login layout/spacing here — colors come from shared/css/tokens.css,
+   reset/components come from shared/css/base.css.
+   ========================================================================== */
+
+.login-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: clamp(6rem, 14vw, 8rem) 3rem;
+}
+
+.login-container {
+  display: flex;
+  justify-content: center;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+  padding: clamp(1.75rem, 5vw, 2.5rem);
+  text-align: center;
+  transition: var(--theme-transition);
+}
+
+.login-title {
+  font-size: clamp(1.6rem, 4vw, 2rem);
+  margin-bottom: 0.5rem;
+}
+
+.login-sub {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 1.75rem;
+}
+
+.login-card form {
+  text-align: left;
+}
+
+.login-hint {
+  margin-top: 1.25rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
