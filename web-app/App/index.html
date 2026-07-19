@@ -36,7 +36,7 @@
        montado pelo workflow, o conteúdo de web-app/homepage/ é copiado pra
        RAIZ do _site (a homepage "canônica" vive em "/"), e /homepage/ é só
        um stub de redirect sem assets próprios (ver .github/workflows/pages.yml
-       e a decisão registrada em 06-01-SUMMARY.md) — usar "../homepage/assets/"
+       e a decisão registrada em 06-01-SUMMARY.md); usar "../homepage/assets/"
        aqui resultava em 404 no logo/favicon do site publicado. -->
   <link rel="icon" href="../assets/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="../assets/logo.png">
@@ -61,12 +61,12 @@
       </a>
 
       <div class="app-header-actions">
-        <!-- O modal de Perfil (#perfil-modal, ver abaixo do <main>) vive em
-             seu próprio x-data="perfilForm" — componentes CSP irmãos não
-             conseguem chamar métodos um do outro, então o gatilho despacha
-             um CustomEvent de window ($dispatch) que o modal escuta
-             (x-on:open-perfil.window). -->
-        <button class="btn btn-ghost app-header-btn" type="button" x-on:click="$dispatch('open-perfil')">Perfil</button>
+        <!-- Perfil é uma VIEW dentro do #app-main (#panel-perfil, mesmo
+             padrão de #panel-busca/#panel-admin: x-show="tab === 'perfil'"),
+             não mais um modal — reviewer relatou não ter entendido o modal.
+             appShell.openPerfil() troca o painel principal e guarda a aba
+             anterior pra "Voltar" (ver js/app.js). -->
+        <button class="btn btn-ghost app-header-btn" type="button" x-on:click="openPerfil()">Perfil</button>
         <a class="btn btn-ghost app-header-btn" href="../Login/">Sair</a>
 
         <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Alternar tema claro/escuro">
@@ -88,7 +88,10 @@
       </div>
     </div>
 
-    <nav class="app-tabbar container" aria-label="Navegação do app">
+    <!-- Some quando o Perfil está aberto: Busca/Admin ficam irrelevantes
+         nesse contexto e "Voltar" (dentro de #panel-perfil) já é o caminho
+         de volta claro que o reviewer pediu. -->
+    <nav class="app-tabbar container" x-show="tab !== 'perfil'" aria-label="Navegação do app">
       <button
         type="button"
         class="app-tab"
@@ -186,9 +189,12 @@
         </template>
       </div>
 
-      <!-- Modal "Como pesquisar" (WBUSCA-04, copy verbatim de busca_tab.py) -->
+      <!-- Modal "Como pesquisar" (WBUSCA-04, copy verbatim de busca_tab.py).
+           x-cloak: evita o flash do chrome estático (X/textos) antes do
+           Alpine hidratar - ver [x-cloak] em shared/css/base.css. -->
       <div
         class="modal-backdrop"
+        x-cloak
         x-show="tutorialOpen"
         x-on:click.self="tutorialOpen = false"
         x-on:keydown.escape.window="tutorialOpen = false"
@@ -287,7 +293,7 @@
           </div>
           <div class="modal-body">
             <p x-text="'Senha para ' + revealUsername + ':'"></p>
-            <p class="admin-reveal-nota">Anote ou copie agora — ela não será mostrada novamente.</p>
+            <p class="admin-reveal-nota">Anote ou copie agora. Ela não será mostrada novamente.</p>
             <div class="form-field">
               <input type="text" x-model="revealPassword" readonly aria-label="Senha gerada">
             </div>
@@ -358,30 +364,38 @@
         </div>
       </div>
     </section>
-  </main>
 
-  <!-- MOCK: formulário de Perfil completo, espelhando desktop/app/ui/perfil_dialog.py.
-       Sem persistência real nesta fase (Salvar só fecha) — PUT /profile é Fase 7+. -->
-  <div id="perfil-modal" x-data="perfilForm" x-on:open-perfil.window="open = true">
-    <div
-      class="modal-backdrop"
-      x-show="open"
-      x-on:click.self="open = false"
-      x-on:keydown.escape.window="open = false"
-    >
-      <div class="modal-dialog perfil-dialog" role="dialog" aria-modal="true" aria-labelledby="perfil-title">
-        <div class="modal-header">
-          <h2 id="perfil-title">Perfil</h2>
-          <button type="button" class="modal-close" x-on:click="cancelar()" aria-label="Fechar">×</button>
-        </div>
-        <div class="modal-body perfil-body">
+    <!-- MOCK: view de Perfil completa, espelhando desktop/app/ui/perfil_dialog.py.
+         Reviewer relatou não ter entendido o modal anterior — agora é uma
+         TELA dentro de #app-main (mesmo padrão de #panel-busca/#panel-admin:
+         x-show="tab === 'perfil'", acionada pelo botão "Perfil" do header
+         via appShell.openPerfil()), com "Voltar" (topo e rodapé) chamando
+         appShell.voltarDoPerfil(). Salvar persiste em localStorage (mock,
+         chave "cf-perfil-mock") e o form re-hidrata a partir dela ao carregar
+         a página (init(), ver js/perfil.js); a persistência real via
+         PUT /profile fica pra Fase 7+. -->
+    <section id="panel-perfil" x-show="tab === 'perfil'" x-data="perfilForm" role="tabpanel" aria-label="Perfil">
+      <div class="perfil-topbar">
+        <button type="button" class="btn btn-ghost perfil-voltar-btn" x-on:click="voltarDoPerfil()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6"></path>
+          </svg>
+          Voltar
+        </button>
+      </div>
+
+      <div class="perfil-view">
+        <div class="perfil-intro">
+          <h1 class="perfil-title">Perfil</h1>
           <p class="perfil-sub">Quanto mais completo, melhores são as buscas.</p>
           <p class="perfil-nota">
-            Após preencher, na busca escreva só o que quer mudar — localização, cargo,
-            região, órgão. O resto a IA usa do seu perfil.
+            Após preencher, na busca escreva só o que quer mudar: localização, cargo,
+            região ou órgão. O resto a IA usa do seu perfil.
           </p>
+        </div>
 
-          <h3 class="perfil-section-title">Formação</h3>
+        <section class="perfil-section">
+          <h2 class="perfil-section-title">Formação</h2>
 
           <label class="perfil-check">
             <input type="checkbox" x-model="niveis.fundamental" x-on:change="onNivelToggled('fundamental')">
@@ -416,15 +430,17 @@
           <div class="form-field perfil-curso-field" x-show="niveis.pos" x-transition>
             <input type="text" x-model="cursos.pos" x-bind:disabled="!niveis.pos" placeholder="Qual? (ex: Enfermagem)">
           </div>
+        </section>
 
-          <h3 class="perfil-section-title">Formação futura / em andamento</h3>
+        <section class="perfil-section">
+          <h2 class="perfil-section-title">Formação futura ou em andamento</h2>
           <div class="form-field">
             <input type="text" x-model="formacaoFutura" placeholder="ex: Mestrado em Saúde Coletiva">
           </div>
           <div class="form-field">
             <!-- x-bind:value (não x-model) de propósito: combinar x-model com
                  um x-on:input próprio no MESMO campo cria uma corrida entre
-                 os dois listeners nativos de "input" — o listener interno do
+                 os dois listeners nativos de "input", e o listener interno do
                  x-model pode sobrescrever o valor mascarado com o texto cru
                  a cada tecla, fazendo a máscara "não aplicar" visualmente
                  (bug reportado no reviewer). x-bind:value é só leitura de
@@ -440,11 +456,13 @@
             >
           </div>
           <p class="perfil-hint">
-            Data prevista de formação — usada pra te mostrar concursos que você poderá
+            Data prevista de formação, usada para mostrar concursos que você poderá
             prestar quando se formar.
           </p>
+        </section>
 
-          <h3 class="perfil-section-title">Localização</h3>
+        <section class="perfil-section">
+          <h2 class="perfil-section-title">Localização</h2>
           <div class="perfil-cep-row">
             <input type="text" class="perfil-cep-input" x-model="cep" x-on:change="buscarCep()" placeholder="CEP" maxlength="9" aria-label="CEP">
             <button type="button" class="btn btn-ghost" x-on:click="buscarCep()">Buscar</button>
@@ -461,8 +479,10 @@
               </template>
             </select>
           </div>
+        </section>
 
-          <h3 class="perfil-section-title">Disposição para mudar</h3>
+        <section class="perfil-section">
+          <h2 class="perfil-section-title">Disposição para mudar</h2>
           <div class="form-field">
             <select x-model="mobilidade" aria-label="Disposição para mudar">
               <template x-for="opt in mobilidadeOptions" x-bind:key="opt.label">
@@ -475,14 +495,18 @@
             não digitar um local na pesquisa, o app mostra concursos do seu estado. Com
             "Qualquer lugar", busca no Brasil inteiro.
           </p>
+        </section>
 
-          <h3 class="perfil-section-title">Áreas de interesse</h3>
+        <section class="perfil-section">
+          <h2 class="perfil-section-title">Áreas de interesse</h2>
           <div class="form-field">
             <input type="text" x-model="areasInteresse" placeholder="ex: saúde, educação">
           </div>
+        </section>
 
-          <h3 class="perfil-section-title">Currículo</h3>
-          <p class="perfil-nota">Cole/escreva, ou anexe um arquivo (PDF/TXT). Um por conta.</p>
+        <section class="perfil-section">
+          <h2 class="perfil-section-title">Currículo</h2>
+          <p class="perfil-nota">Cole ou escreva abaixo, ou anexe um arquivo (PDF/TXT). Apenas um por conta.</p>
           <label class="btn btn-ghost perfil-anexar-btn">
             Anexar arquivo (PDF/TXT)
             <input type="file" class="perfil-file-input" accept=".pdf,.txt" x-on:change="anexarCurriculo($event)" aria-label="Anexar currículo">
@@ -491,15 +515,16 @@
           <div class="form-field">
             <textarea x-model="curriculoTexto" placeholder="Cole ou escreva seu currículo aqui..."></textarea>
           </div>
+        </section>
 
-          <div class="perfil-actions-row">
-            <button type="button" class="btn btn-primary" x-on:click="salvar()">Salvar</button>
-            <button type="button" class="btn btn-ghost" x-on:click="cancelar()">Cancelar</button>
-          </div>
+        <div class="perfil-actions-row">
+          <button type="button" class="btn btn-primary" x-on:click="salvar()">Salvar</button>
+          <button type="button" class="btn btn-ghost" x-on:click="voltarDoPerfil()">Voltar</button>
         </div>
+        <p class="perfil-salvo-feedback" x-show="salvoFeedback" x-transition x-text="'Perfil salvo.'"></p>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <!-- Alpine.js CSP build (sem unsafe-eval) — carregado primeiro para que os
        componentes registrados via alpine:init existam antes da inicialização. -->

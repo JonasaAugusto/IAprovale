@@ -81,7 +81,8 @@
 }
 
 #panel-busca,
-#panel-admin {
+#panel-admin,
+#panel-perfil {
   width: 100%;
 }
 

@@ -299,6 +299,19 @@ a {
   }
 }
 
+/* --------------------------------- X-CLOAK ----------------------------------- */
+
+/* Evita o "flash" de conteúdo não-hidratado do Alpine: elementos com x-show
+   (modais fechados, painéis de aba inativos) ficam visíveis por padrão até o
+   script defer do Alpine terminar de inicializar - nesse intervalo, o
+   chrome estático (botão "×", "Cancelar") aparece sem o texto reativo
+   (x-text ainda vazio), como um modal "vazio". Marcar esses elementos com
+   x-cloak + esta regra os esconde via CSS desde o primeiro paint; o Alpine
+   remove o atributo x-cloak sozinho assim que hidrata o elemento. */
+[x-cloak] {
+  display: none !important;
+}
+
 /* ------------------------------- ACESSIBILIDADE ------------------------------ */
 
 :focus-visible {

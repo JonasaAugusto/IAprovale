@@ -10,15 +10,28 @@
 document.addEventListener("alpine:init", () => {
   Alpine.data("appShell", () => ({
     tab: "busca",
+    // Guarda a aba de onde o usuário veio antes de abrir o Perfil, pra
+    // "Voltar" levar de volta pra Busca/Admin em vez de sempre cair na
+    // primeira aba. Perfil não é uma aba do tabbar (nav.app-tabbar só lista
+    // Busca/Admin) — é acessado só pelo botão "Perfil" do header, mas troca
+    // o painel principal do mesmo jeito que as abas (#panel-perfil abaixo,
+    // igual #panel-busca/#panel-admin), reaproveitando o padrão já
+    // estabelecido de x-data aninhado lendo `tab` do escopo pai (appShell).
+    previousTab: "busca",
 
     select(t) {
       this.tab = t;
     },
 
-    // MOCK: o modal de Perfil (#perfil-modal) é preenchido pelo plano 06-03.
-    // Aqui só existe o gatilho — sem estado/abertura real ainda.
     openPerfil() {
-      // no-op nesta fase — placeholder documentado, ver #perfil-modal no HTML.
+      if (this.tab !== "perfil") {
+        this.previousTab = this.tab;
+      }
+      this.tab = "perfil";
+    },
+
+    voltarDoPerfil() {
+      this.tab = this.previousTab;
     },
   }));
 });
