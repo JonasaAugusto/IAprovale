@@ -11,7 +11,7 @@
    View, not modal: #panel-perfil is a main-view panel, same pattern as
    #panel-busca/#panel-admin (x-show="tab === 'perfil'", toggled by the
    header's "Perfil" button via appShell.openPerfil()). This component's
-   x-data is nested inside appShell's scope (no shared store needed) — Alpine
+   x-data is nested inside appShell's scope (no shared store needed); Alpine
    resolves `tab`/`voltarDoPerfil()` from the parent scope for any property
    not defined here, the same mechanism buscaTab/adminTab already rely on.
    ========================================================================== */

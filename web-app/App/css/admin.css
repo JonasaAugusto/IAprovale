@@ -1,7 +1,7 @@
 /* ==========================================================================
    IAprovale — /App Admin tab (mocked)
    Add-user row, search field, user list (table-like row at desktop,
-   collapsing to stacked cards at phone width — WEB-04 responsiveness), and
+   collapsing to stacked cards at phone width, WEB-04 responsiveness), and
    destructive-action button coloring (mirrors the desktop's Desativar/
    Excluir emphasis via the shared --destructive token). Extends the
    .modal-backdrop/.modal-dialog primitives from css/busca.css for the

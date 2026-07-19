@@ -63,7 +63,7 @@
       <div class="app-header-actions">
         <!-- Perfil é uma VIEW dentro do #app-main (#panel-perfil, mesmo
              padrão de #panel-busca/#panel-admin: x-show="tab === 'perfil'"),
-             não mais um modal — reviewer relatou não ter entendido o modal.
+             não mais um modal (reviewer relatou não ter entendido o modal).
              appShell.openPerfil() troca o painel principal e guarda a aba
              anterior pra "Voltar" (ver js/app.js). -->
         <button class="btn btn-ghost app-header-btn" type="button" x-on:click="openPerfil()">Perfil</button>
@@ -217,8 +217,11 @@
     </section>
 
     <!-- MOCK: aba Admin sempre visível nesta fase; o gating dinâmico por
-         is_admin (autorização server-side) é escopo da Fase 7 (WEB-04). -->
-    <section id="panel-admin" x-show="tab === 'admin'" x-data="adminTab" role="tabpanel" aria-label="Admin">
+         is_admin (autorização server-side) é escopo da Fase 7 (WEB-04).
+         x-cloak: tab começa em "busca", então este painel deve ficar oculto
+         no primeiro paint. Sem x-cloak ele piscava visível (empilhado sob
+         Busca) até o Alpine hidratar (ver [x-cloak] em shared/css/base.css). -->
+    <section id="panel-admin" x-cloak x-show="tab === 'admin'" x-data="adminTab" role="tabpanel" aria-label="Admin">
       <p class="admin-erro" x-show="erro" x-text="erro"></p>
 
       <div class="admin-add-row">
@@ -279,9 +282,12 @@
         <p class="admin-empty" x-show="filtrados.length === 0">Nenhum usuário encontrado.</p>
       </div>
 
-      <!-- Modal: revelar senha gerada (Adicionar usuário / Gerar nova senha) -->
+      <!-- Modal: revelar senha gerada (Adicionar usuário / Gerar nova senha).
+           x-cloak: evita o flash do chrome estático antes do Alpine hidratar
+           (ver [x-cloak] em shared/css/base.css). -->
       <div
         class="modal-backdrop"
+        x-cloak
         x-show="revealOpen"
         x-on:click.self="fecharReveal()"
         x-on:keydown.escape.window="fecharReveal()"
@@ -310,9 +316,12 @@
         </div>
       </div>
 
-      <!-- Modal: editar nome (Editar nome) -->
+      <!-- Modal: editar nome (Editar nome).
+           x-cloak: evita o flash do chrome estático antes do Alpine hidratar
+           (ver [x-cloak] em shared/css/base.css). -->
       <div
         class="modal-backdrop"
+        x-cloak
         x-show="renameOpen"
         x-on:click.self="cancelarRenomear()"
         x-on:keydown.escape.window="cancelarRenomear()"
@@ -336,9 +345,14 @@
         </div>
       </div>
 
-      <!-- Modal: confirmação (Desativar/Reativar/Excluir/Gerar nova senha) -->
+      <!-- Modal: confirmação (Desativar/Reativar/Excluir/Gerar nova senha).
+           x-cloak: corrige o bug reportado pelo reviewer (modal aparecia
+           vazio, só com o "×" e "Cancelar"). O chrome estático era exibido
+           antes do Alpine hidratar confirmTitulo/confirmCorpo/confirmTextoBotao
+           (ver [x-cloak] em shared/css/base.css). -->
       <div
         class="modal-backdrop"
+        x-cloak
         x-show="confirmOpen"
         x-on:click.self="cancelarConfirmacao()"
         x-on:keydown.escape.window="cancelarConfirmacao()"
@@ -366,7 +380,7 @@
     </section>
 
     <!-- MOCK: view de Perfil completa, espelhando desktop/app/ui/perfil_dialog.py.
-         Reviewer relatou não ter entendido o modal anterior — agora é uma
+         Reviewer relatou não ter entendido o modal anterior; agora é uma
          TELA dentro de #app-main (mesmo padrão de #panel-busca/#panel-admin:
          x-show="tab === 'perfil'", acionada pelo botão "Perfil" do header
          via appShell.openPerfil()), com "Voltar" (topo e rodapé) chamando
@@ -374,7 +388,9 @@
          chave "cf-perfil-mock") e o form re-hidrata a partir dela ao carregar
          a página (init(), ver js/perfil.js); a persistência real via
          PUT /profile fica pra Fase 7+. -->
-    <section id="panel-perfil" x-show="tab === 'perfil'" x-data="perfilForm" role="tabpanel" aria-label="Perfil">
+    <!-- x-cloak: tab começa em "busca", este painel deve ficar oculto no
+         primeiro paint (mesmo motivo do #panel-admin acima). -->
+    <section id="panel-perfil" x-cloak x-show="tab === 'perfil'" x-data="perfilForm" role="tabpanel" aria-label="Perfil">
       <div class="perfil-topbar">
         <button type="button" class="btn btn-ghost perfil-voltar-btn" x-on:click="voltarDoPerfil()">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
