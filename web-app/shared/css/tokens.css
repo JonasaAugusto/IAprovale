@@ -1,0 +1,109 @@
+/* ==========================================================================
+   IAprovale — shared design tokens
+   Single source of truth for the NEW pages (Login/App). Extracted VERBATIM
+   from web-app/homepage/css/style.css (light=green / dark=gold theme system).
+   The homepage intentionally KEEPS its own inline copy of this same block —
+   see .planning/research/ARCHITECTURE.md (Client Architecture trade-off,
+   path-depth caveat) for why: do NOT edit homepage/css/style.css to import
+   this file instead, and do NOT delete the homepage's inline copy.
+   ========================================================================== */
+
+:root {
+  /* Tipografia */
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+
+  /* Ritmo / forma */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --container: 1080px;
+
+  /* Transição de troca de tema */
+  --theme-transition: background-color 0.32s ease, color 0.32s ease,
+    border-color 0.32s ease, box-shadow 0.32s ease;
+}
+
+/* --- TEMA CLARO: verde, fresco e profissional --- */
+:root[data-theme="light"] {
+  --bg: #f6fbf8;
+  --bg-elev: #ffffff;
+  --bg-soft: #ecf5ef;
+
+  --text: #3d5147;
+  --text-strong: #10241a;
+  --text-muted: #5c6f64;
+
+  --accent: #1b5e3a;
+  --accent-strong: #154a2e;
+  --accent-bright: #2e7d32;
+  --accent-soft: #43a047;
+
+  --border: rgba(16, 36, 26, 0.12);
+  --border-strong: rgba(16, 36, 26, 0.22);
+
+  --header-bg: rgba(246, 251, 248, 0.82);
+
+  --title-gradient: linear-gradient(115deg, #1b5e3a 20%, #2e7d32 55%, #43a047 90%);
+
+  --btn-primary-bg: linear-gradient(135deg, #1b5e3a, #2e7d32);
+  --btn-primary-bg-hover: linear-gradient(135deg, #175232, #2a722e);
+  --btn-primary-text: #ffffff;
+  --btn-primary-shadow: 0 10px 26px -10px rgba(27, 94, 58, 0.55);
+  --btn-primary-shadow-hover: 0 16px 34px -12px rgba(27, 94, 58, 0.65);
+
+  --card-shadow: 0 8px 30px -14px rgba(16, 36, 26, 0.18);
+  --focus-ring: #2e7d32;
+
+  --blob-1: rgba(67, 160, 71, 0.28);
+  --blob-2: rgba(27, 94, 58, 0.18);
+  --blob-3: rgba(102, 187, 106, 0.22);
+
+  --backdrop: rgba(16, 36, 26, 0.45);
+
+  --input-bg: #ffffff;
+
+  color-scheme: light;
+}
+
+/* --- TEMA ESCURO: dourado, premium e exclusivo --- */
+:root[data-theme="dark"] {
+  --bg: #14110d;
+  --bg-elev: #1c1712;
+  --bg-soft: #211b14;
+
+  --text: #ede4d3;
+  --text-strong: #f5efe4;
+  --text-muted: #c4b499;
+
+  --accent: #bd996c;      /* ouro base — rgb(189, 153, 108) */
+  --accent-strong: #a8865c;
+  --accent-bright: #e9d9b8;
+  --accent-soft: #f3e6c8;
+
+  --border: rgba(233, 217, 184, 0.14);
+  --border-strong: rgba(233, 217, 184, 0.3);
+
+  --header-bg: rgba(20, 17, 13, 0.82);
+
+  --title-gradient: linear-gradient(115deg, #bd996c 15%, #e9d9b8 55%, #f3e6c8 90%);
+
+  --btn-primary-bg: linear-gradient(135deg, #bd996c, #d9bd8e);
+  --btn-primary-bg-hover: linear-gradient(135deg, #cba876, #e9d9b8);
+  --btn-primary-text: #1c1712;
+  --btn-primary-shadow: 0 10px 28px -10px rgba(189, 153, 108, 0.45);
+  --btn-primary-shadow-hover: 0 16px 36px -12px rgba(189, 153, 108, 0.55);
+
+  --card-shadow: 0 10px 34px -16px rgba(0, 0, 0, 0.6);
+  --focus-ring: #e9d9b8;
+
+  --blob-1: rgba(189, 153, 108, 0.18);
+  --blob-2: rgba(233, 217, 184, 0.1);
+  --blob-3: rgba(168, 134, 92, 0.16);
+
+  --backdrop: rgba(8, 6, 4, 0.68);
+
+  --input-bg: #211b14;
+
+  color-scheme: dark;
+}
