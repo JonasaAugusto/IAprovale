@@ -89,8 +89,15 @@ document.addEventListener("alpine:init", () => {
     // x-show (não é desmontado ao trocar de aba), isto cobre "reidrata ao
     // abrir o Perfil": os dados já estão carregados antes do usuário navegar
     // até lá.
+    //
+    // $nextTick: init() roda ANTES dos <template x-for> renderizarem as
+    // <option> de UF/mobilidade. Se this.uf fosse setado agora, o setter do
+    // x-model atribuiria select.value="MG" com só a option placeholder no
+    // DOM — o select cairia pra "" e, quando as options chegassem, o efeito
+    // não re-executaria (uf não mudou de novo): estado certo, tela mostrando
+    // "UF". Adiar um tick garante que as options existem antes do write-back.
     init() {
-      this._rehidratar();
+      this.$nextTick(() => this._rehidratar());
     },
 
     // Mantém o conjunto de níveis coerente (superior/tecnico/pos -> medio ->
