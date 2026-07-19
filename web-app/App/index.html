@@ -41,6 +41,7 @@
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/busca.css">
   <link rel="stylesheet" href="css/perfil.css">
+  <link rel="stylesheet" href="css/admin.css">
 </head>
 <body class="full-height app-body" x-data="appShell">
 
@@ -205,8 +206,151 @@
 
     <!-- MOCK: aba Admin sempre visível nesta fase; o gating dinâmico por
          is_admin (autorização server-side) é escopo da Fase 7 (WEB-04). -->
-    <section id="panel-admin" x-show="tab === 'admin'" role="tabpanel" aria-label="Admin">
-      <!-- Plano 06-03 preenche a marcação da aba Admin aqui. -->
+    <section id="panel-admin" x-show="tab === 'admin'" x-data="adminTab" role="tabpanel" aria-label="Admin">
+      <p class="admin-erro" x-show="erro" x-text="erro"></p>
+
+      <div class="admin-add-row">
+        <input
+          type="text"
+          class="admin-add-input"
+          x-model="novoUsername"
+          placeholder="Nome de usuário"
+          aria-label="Nome do novo usuário"
+        >
+        <label class="admin-add-check">
+          <input type="checkbox" x-model="novoIsAdmin">
+          admin
+        </label>
+        <button type="button" class="btn btn-primary" x-on:click="adicionar()">Adicionar usuário</button>
+      </div>
+
+      <input
+        type="search"
+        class="admin-search-input"
+        x-model="filtro"
+        placeholder="Procurar usuário..."
+        aria-label="Procurar usuário"
+      >
+
+      <div class="admin-user-list">
+        <template x-for="u in filtrados" x-bind:key="u.user_id">
+          <div class="admin-user-row">
+            <div class="admin-user-info">
+              <span class="admin-user-username" x-text="u.username"></span>
+              <span class="admin-tag admin-tag-admin" x-show="u.is_admin">[admin]</span>
+              <span class="admin-tag admin-tag-inativo" x-show="!u.is_active">[inativo]</span>
+            </div>
+            <div class="admin-user-actions">
+              <button type="button" class="btn btn-ghost admin-action-btn" x-on:click="abrirRenomear(u)">Editar nome</button>
+              <button type="button" class="btn btn-ghost admin-action-btn" x-on:click="gerarSenha(u)">Gerar nova senha</button>
+              <button
+                type="button"
+                class="btn btn-ghost admin-action-btn admin-action-destructive"
+                x-show="u.is_active"
+                x-on:click="desativar(u)"
+              >Desativar</button>
+              <button
+                type="button"
+                class="btn btn-ghost admin-action-btn"
+                x-show="!u.is_active"
+                x-on:click="reativar(u)"
+              >Reativar</button>
+              <button
+                type="button"
+                class="btn btn-ghost admin-action-btn admin-action-destructive"
+                x-show="!isSelf(u)"
+                x-on:click="excluir(u)"
+              >Excluir</button>
+            </div>
+          </div>
+        </template>
+        <p class="admin-empty" x-show="filtrados.length === 0">Nenhum usuário encontrado.</p>
+      </div>
+
+      <!-- Modal: revelar senha gerada (Adicionar usuário / Gerar nova senha) -->
+      <div
+        class="modal-backdrop"
+        x-show="revealOpen"
+        x-on:click.self="fecharReveal()"
+        x-on:keydown.escape.window="fecharReveal()"
+      >
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reveal-title">
+          <div class="modal-header">
+            <h2 id="reveal-title">Nova senha gerada</h2>
+            <button type="button" class="modal-close" x-on:click="fecharReveal()" aria-label="Fechar">×</button>
+          </div>
+          <div class="modal-body">
+            <p x-text="'Senha para ' + revealUsername + ':'"></p>
+            <p class="admin-reveal-nota">Anote ou copie agora — ela não será mostrada novamente.</p>
+            <div class="form-field">
+              <input type="text" x-model="revealPassword" readonly aria-label="Senha gerada">
+            </div>
+            <div class="admin-modal-actions">
+              <button
+                type="button"
+                class="btn btn-primary"
+                x-on:click="copiarSenha()"
+                x-text="revealCopiado ? 'Copiado!' : 'Copiar senha'"
+              ></button>
+              <button type="button" class="btn btn-ghost" x-on:click="fecharReveal()">Fechar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: editar nome (Editar nome) -->
+      <div
+        class="modal-backdrop"
+        x-show="renameOpen"
+        x-on:click.self="cancelarRenomear()"
+        x-on:keydown.escape.window="cancelarRenomear()"
+      >
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="rename-title">
+          <div class="modal-header">
+            <h2 id="rename-title">Editar nome de usuário</h2>
+            <button type="button" class="modal-close" x-on:click="cancelarRenomear()" aria-label="Fechar">×</button>
+          </div>
+          <div class="modal-body">
+            <p x-text="renameUser ? 'Novo nome de usuário para ' + renameUser.username + ':' : ''"></p>
+            <div class="form-field">
+              <input type="text" x-model="renameValue" aria-label="Novo nome de usuário">
+            </div>
+            <p class="admin-erro" x-show="renameErro" x-text="renameErro"></p>
+            <div class="admin-modal-actions">
+              <button type="button" class="btn btn-primary" x-on:click="confirmarRenomear()">Salvar</button>
+              <button type="button" class="btn btn-ghost" x-on:click="cancelarRenomear()">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: confirmação (Desativar/Reativar/Excluir/Gerar nova senha) -->
+      <div
+        class="modal-backdrop"
+        x-show="confirmOpen"
+        x-on:click.self="cancelarConfirmacao()"
+        x-on:keydown.escape.window="cancelarConfirmacao()"
+      >
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+          <div class="modal-header">
+            <h2 id="confirm-title" x-text="confirmTitulo"></h2>
+            <button type="button" class="modal-close" x-on:click="cancelarConfirmacao()" aria-label="Fechar">×</button>
+          </div>
+          <div class="modal-body">
+            <p x-text="confirmCorpo"></p>
+            <div class="admin-modal-actions">
+              <button
+                type="button"
+                class="btn"
+                x-bind:class="confirmDestrutivo ? 'btn-ghost admin-action-destructive' : 'btn-primary'"
+                x-on:click="confirmarAcao()"
+                x-text="confirmTextoBotao"
+              ></button>
+              <button type="button" class="btn btn-ghost" x-on:click="cancelarConfirmacao()">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -351,5 +495,6 @@
   <script defer src="js/app.js"></script>
   <script defer src="js/busca.js"></script>
   <script defer src="js/perfil.js"></script>
+  <script defer src="js/admin.js"></script>
 </body>
 </html>

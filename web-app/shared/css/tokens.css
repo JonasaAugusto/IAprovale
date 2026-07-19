@@ -63,6 +63,11 @@
 
   --input-bg: #ffffff;
 
+  /* Ações destrutivas (Desativar/Excluir) — mesmo hex do desktop
+     (COLOR_DESTRUCTIVE_LIGHT em desktop/app/ui/styles.py), pra manter
+     paridade visual entre as duas plataformas. */
+  --destructive: #c42b1c;
+
   color-scheme: light;
 }
 
@@ -104,6 +109,11 @@
   --backdrop: rgba(8, 6, 4, 0.68);
 
   --input-bg: #211b14;
+
+  /* Ações destrutivas (Desativar/Excluir) — mesmo hex do desktop
+     (COLOR_DESTRUCTIVE_DARK em desktop/app/ui/styles.py), pra manter
+     paridade visual entre as duas plataformas. */
+  --destructive: #ff99a4;
 
   color-scheme: dark;
 }

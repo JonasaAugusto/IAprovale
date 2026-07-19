@@ -1,0 +1,203 @@
+/* ==========================================================================
+   IAprovale — /App Admin tab (mocked)
+   Add-user row, search field, user list (table-like row at desktop,
+   collapsing to stacked cards at phone width — WEB-04 responsiveness), and
+   destructive-action button coloring (mirrors the desktop's Desativar/
+   Excluir emphasis via the shared --destructive token). Extends the
+   .modal-backdrop/.modal-dialog primitives from css/busca.css for the
+   password-reveal/rename/confirm modals. Tokens only, mobile-first.
+   ========================================================================== */
+
+/* -------------------------------- MENSAGENS ------------------------------------ */
+
+.admin-erro {
+  color: var(--destructive);
+  margin-bottom: 0.9rem;
+  font-size: 0.88rem;
+}
+
+/* -------------------------------- ADD-USER ROW ---------------------------------- */
+
+.admin-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.admin-add-input {
+  flex: 1 1 220px;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-strong);
+  background: var(--input-bg);
+  color: var(--text-strong);
+  transition: var(--theme-transition);
+}
+
+.admin-add-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.admin-add-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.admin-add-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+/* ---------------------------------- SEARCH -------------------------------------- */
+
+.admin-search-input {
+  display: block;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-strong);
+  background: var(--input-bg);
+  color: var(--text-strong);
+  margin-bottom: 1.2rem;
+  transition: var(--theme-transition);
+}
+
+.admin-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* -------------------------------- USER LIST -------------------------------------- */
+
+.admin-user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.admin-user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.1rem;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: var(--theme-transition);
+}
+
+.admin-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.admin-user-username {
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.admin-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--text-muted);
+}
+
+.admin-tag-admin {
+  color: var(--accent);
+}
+
+.admin-tag-inativo {
+  color: var(--destructive);
+}
+
+.admin-user-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+.admin-action-btn {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.82rem;
+}
+
+.admin-action-destructive {
+  color: var(--destructive);
+  border-color: var(--destructive);
+}
+
+.admin-action-destructive:hover {
+  border-color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 12%, transparent);
+}
+
+.admin-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem 0;
+}
+
+/* --------------------------------- MODAIS ----------------------------------------- */
+
+.admin-reveal-nota {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0 0.9rem;
+}
+
+.admin-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.2rem;
+}
+
+.admin-modal-actions .btn {
+  flex: 1;
+}
+
+/* ------------------------------- RESPONSIVO ---------------------------------------- */
+
+@media (max-width: 640px) {
+  .admin-add-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Colapsa a linha "tabela" em card empilhado no telefone. */
+  .admin-user-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .admin-user-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .admin-action-btn {
+    min-height: 42px;
+  }
+
+  .admin-add-check {
+    min-height: 44px;
+  }
+}
