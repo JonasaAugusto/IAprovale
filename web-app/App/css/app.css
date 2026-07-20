@@ -78,12 +78,12 @@
   flex: 1;
   width: 100%;
   padding-block: 1.5rem 3rem;
-  padding-inline: 0.8rem;
+  padding-inline: 3rem;
 }
 
 .header-inner,
 .app-tabbar {
-  padding-inline: 0.8rem;
+  padding-inline: 3rem;
 }
 
 #panel-busca,
@@ -95,6 +95,12 @@
 /* ------------------------------- RESPONSIVO ---------------------------------- */
 
 @media (max-width: 640px) {
+  .header-inner,
+  .app-tabbar,
+  .app-main {
+    padding-inline: 1.25rem;
+  }
+
   .header-inner {
     padding-block: 0.6rem;
   }
