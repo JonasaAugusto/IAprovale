@@ -150,25 +150,25 @@
       </div>
 
       <!-- Skeleton de carregamento (mock): visível enquanto loading=true -->
-      <div class="busca-skeleton-list" x-show="loading" aria-hidden="true">
+      <div class="busca-skeleton-list" x-show="!!loading" aria-hidden="true">
         <div class="concurso-card skeleton busca-skeleton-card"></div>
         <div class="concurso-card skeleton busca-skeleton-card"></div>
         <div class="concurso-card skeleton busca-skeleton-card"></div>
       </div>
 
-      <p class="busca-empty" x-show="isEmpty">Nenhum concurso encontrado com esses critérios. Tente ajustar sua busca ou sua formação salva.</p>
+      <p class="busca-empty" x-show="!!isEmpty">Nenhum concurso encontrado com esses critérios. Tente ajustar sua busca ou sua formação salva.</p>
 
       <div class="busca-results" x-show="!loading">
         <template x-for="c in results" x-bind:key="c.titulo">
           <article class="concurso-card">
             <div class="concurso-card-title-row">
               <h3 class="concurso-card-titulo" x-text="c.titulo"></h3>
-              <span class="concurso-badge-novo" x-show="c.is_new">NOVO</span>
+              <span class="concurso-badge-novo" x-show="!!c.is_new">NOVO</span>
             </div>
 
             <p class="concurso-card-localizacao" x-show="localizacao(c)" x-text="'Localização: ' + localizacao(c)"></p>
 
-            <p class="concurso-card-futuro" x-show="c.futuro_match" x-text="textoFuturo(c)"></p>
+            <p class="concurso-card-futuro" x-show="!!c.futuro_match" x-text="textoFuturo(c)"></p>
 
             <p class="concurso-card-cargos-label" x-show="cargos(c).length > 0" x-text="cargosLabel(c)"></p>
 
@@ -187,7 +187,7 @@
 
             <p class="concurso-card-prazo" x-text="'Inscrições até: ' + prazoBR(c.datas.fim)"></p>
 
-            <div class="concurso-card-link-row" x-show="c.noticia.link">
+            <div class="concurso-card-link-row" x-show="!!c.noticia.link">
               <button type="button" class="btn btn-ghost concurso-card-copiar" x-on:click="copiar(c)" x-text="c.copied ? 'Copiado!' : 'Copiar link'"></button>
             </div>
           </article>
@@ -202,7 +202,7 @@
       <div
         class="modal-backdrop"
         x-cloak
-        x-show="tutorialOpen"
+        x-show="!!tutorialOpen"
         x-on:click.self="fecharTutorial()"
         x-on:keydown.escape.window="fecharTutorial()"
       >
@@ -214,7 +214,7 @@
           <div class="modal-body">
             <template x-for="section in ajudaSections" x-bind:key="section.body">
               <div class="ajuda-section">
-                <h3 x-show="section.heading" x-text="section.heading"></h3>
+                <h3 x-show="!!section.heading" x-text="section.heading"></h3>
                 <p x-text="section.body"></p>
               </div>
             </template>
@@ -229,7 +229,7 @@
          no primeiro paint. Sem x-cloak ele piscava visível (empilhado sob
          Busca) até o Alpine hidratar (ver [x-cloak] em shared/css/base.css). -->
     <section id="panel-admin" x-cloak x-show="tab === 'admin'" x-data="adminTab" role="tabpanel" aria-label="Admin">
-      <p class="admin-erro" x-show="erro" x-text="erro"></p>
+      <p class="admin-erro" x-show="!!erro" x-text="erro"></p>
 
       <div class="admin-add-row">
         <input
@@ -259,7 +259,7 @@
           <div class="admin-user-row">
             <div class="admin-user-info">
               <span class="admin-user-username" x-text="u.username"></span>
-              <span class="admin-tag admin-tag-admin" x-show="u.is_admin">[admin]</span>
+              <span class="admin-tag admin-tag-admin" x-show="!!u.is_admin">[admin]</span>
               <span class="admin-tag admin-tag-inativo" x-show="!u.is_active">[inativo]</span>
             </div>
             <div class="admin-user-actions">
@@ -298,7 +298,7 @@
       <div
         class="modal-backdrop"
         x-cloak
-        x-show="revealOpen"
+        x-show="!!revealOpen"
         x-on:click.self="fecharReveal()"
         x-on:keydown.escape.window="fecharReveal()"
       >
@@ -332,7 +332,7 @@
       <div
         class="modal-backdrop"
         x-cloak
-        x-show="renameOpen"
+        x-show="!!renameOpen"
         x-on:click.self="cancelarRenomear()"
         x-on:keydown.escape.window="cancelarRenomear()"
       >
@@ -346,7 +346,7 @@
             <div class="form-field">
               <input type="text" x-model="renameValue" aria-label="Novo nome de usuário">
             </div>
-            <p class="admin-erro" x-show="renameErro" x-text="renameErro"></p>
+            <p class="admin-erro" x-show="!!renameErro" x-text="renameErro"></p>
             <div class="admin-modal-actions">
               <button type="button" class="btn btn-primary" x-on:click="confirmarRenomear()">Salvar</button>
               <button type="button" class="btn btn-ghost" x-on:click="cancelarRenomear()">Cancelar</button>
@@ -363,7 +363,7 @@
       <div
         class="modal-backdrop"
         x-cloak
-        x-show="confirmOpen"
+        x-show="!!confirmOpen"
         x-on:click.self="cancelarConfirmacao()"
         x-on:keydown.escape.window="cancelarConfirmacao()"
       >
@@ -437,7 +437,7 @@
             <input type="checkbox" x-model="niveis.tecnico" x-on:change="onNivelToggled('tecnico')">
             Técnico
           </label>
-          <div class="form-field perfil-curso-field" x-show="niveis.tecnico" x-transition>
+          <div class="form-field perfil-curso-field" x-show="!!niveis.tecnico" x-transition>
             <input type="text" x-model="cursos.tecnico" x-bind:disabled="!niveis.tecnico" placeholder="Qual? (ex: Enfermagem)">
           </div>
 
@@ -445,7 +445,7 @@
             <input type="checkbox" x-model="niveis.superior" x-on:change="onNivelToggled('superior')">
             Graduação (Superior)
           </label>
-          <div class="form-field perfil-curso-field" x-show="niveis.superior" x-transition>
+          <div class="form-field perfil-curso-field" x-show="!!niveis.superior" x-transition>
             <input type="text" x-model="cursos.superior" x-bind:disabled="!niveis.superior" placeholder="Qual? (ex: Enfermagem)">
           </div>
 
@@ -453,7 +453,7 @@
             <input type="checkbox" x-model="niveis.pos" x-on:change="onNivelToggled('pos')">
             Pós-graduação
           </label>
-          <div class="form-field perfil-curso-field" x-show="niveis.pos" x-transition>
+          <div class="form-field perfil-curso-field" x-show="!!niveis.pos" x-transition>
             <input type="text" x-model="cursos.pos" x-bind:disabled="!niveis.pos" placeholder="Qual? (ex: Enfermagem)">
           </div>
         </section>
@@ -493,7 +493,7 @@
             <input type="text" class="perfil-cep-input" x-model="cep" x-on:change="buscarCep()" placeholder="CEP" maxlength="9" aria-label="CEP">
             <button type="button" class="btn btn-ghost" x-on:click="buscarCep()">Buscar</button>
           </div>
-          <p class="perfil-cep-status" x-show="cepStatus" x-text="cepStatus"></p>
+          <p class="perfil-cep-status" x-show="!!cepStatus" x-text="cepStatus"></p>
           <div class="form-field">
             <input type="text" x-model="cidade" placeholder="Cidade">
           </div>
@@ -537,7 +537,7 @@
             Anexar arquivo (PDF/TXT)
             <input type="file" class="perfil-file-input" accept=".pdf,.txt" x-on:change="anexarCurriculo($event)" aria-label="Anexar currículo">
           </label>
-          <p class="perfil-arquivo-nome" x-show="curriculoNomeArquivo" x-text="curriculoNomeArquivo"></p>
+          <p class="perfil-arquivo-nome" x-show="!!curriculoNomeArquivo" x-text="curriculoNomeArquivo"></p>
           <div class="form-field">
             <textarea x-model="curriculoTexto" placeholder="Cole ou escreva seu currículo aqui..."></textarea>
           </div>
@@ -547,7 +547,7 @@
           <button type="button" class="btn btn-primary" x-on:click="salvar()">Salvar</button>
           <button type="button" class="btn btn-ghost" x-on:click="voltarDoPerfil()">Voltar</button>
         </div>
-        <p class="perfil-salvo-feedback" x-show="salvoFeedback" x-transition x-text="'Perfil salvo.'"></p>
+        <p class="perfil-salvo-feedback" x-show="!!salvoFeedback" x-transition x-text="'Perfil salvo.'"></p>
       </div>
     </section>
   </main>
