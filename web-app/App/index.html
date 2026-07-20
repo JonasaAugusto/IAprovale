@@ -187,7 +187,14 @@
 
             <p class="concurso-card-prazo" x-text="'Inscrições até: ' + prazoBR(c.datas.fim)"></p>
 
-            <div class="concurso-card-link-row" x-show="!!c.noticia.link">
+            <div class="concurso-card-link-row" x-show="!!linkSeguro(c)">
+              <a
+                class="concurso-card-link"
+                x-bind:href="linkSeguro(c)"
+                x-text="linkSeguro(c)"
+                target="_blank"
+                rel="noopener noreferrer"
+              ></a>
               <button type="button" class="btn btn-ghost concurso-card-copiar" x-on:click="copiar(c)" x-text="c.copied ? 'Copiado!' : 'Copiar link'"></button>
             </div>
           </article>

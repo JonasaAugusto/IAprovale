@@ -211,6 +211,13 @@ document.addEventListener("alpine:init", () => {
       return data ? `${base} (${data})` : base;
     },
 
+    // Só permite abrir http(s): mesmo com dados reais da API (Fase 8+), um
+    // link com esquema perigoso (ex: "javascript:") nunca vira href clicável.
+    linkSeguro(c) {
+      const link = c?.noticia?.link || "";
+      return /^https?:\/\//i.test(link) ? link : "";
+    },
+
     // PITFALLS.md Pitfall 11: writeText() must be the FIRST synchronous
     // statement in the click handler, before any await, or the browser can
     // lose the "user gesture" context and silently reject the call.
