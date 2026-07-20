@@ -111,5 +111,25 @@ document.addEventListener("alpine:init", () => {
     voltarDoPerfil() {
       this.tab = this.previousTab;
     },
+
+    // Server-first logout (paridade com desktop/app/main.py _logout/_finish_logout):
+    // revoga a sessão no backend PRIMEIRO, depois limpa local — e limpa local
+    // em ambos os caminhos (sucesso E falha da chamada), pra nunca deixar um
+    // token morto no sessionStorage por causa de uma falha de rede.
+    async sair() {
+      try {
+        await window.cfApi.logout();
+      } catch (e) {
+        /* revogação server-side falhou (rede/timeout) — limpa local mesmo assim */
+      }
+      try {
+        sessionStorage.removeItem("cf-token");
+        sessionStorage.removeItem("cf-user");
+        sessionStorage.removeItem("cf-last-activity");
+      } catch (e) {
+        /* sessionStorage indisponível — segue pro redirect de qualquer forma */
+      }
+      window.location.href = "../Login/";
+    },
   }));
 });
