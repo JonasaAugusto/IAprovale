@@ -78,6 +78,12 @@
   flex: 1;
   width: 100%;
   padding-block: 1.5rem 3rem;
+  padding-inline: 0.8rem;
+}
+
+.header-inner,
+.app-tabbar {
+  padding-inline: 0.8rem;
 }
 
 #panel-busca,
