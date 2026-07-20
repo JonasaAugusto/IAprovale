@@ -53,3 +53,10 @@
   font-size: 0.82rem;
   color: var(--text-muted);
 }
+
+.login-error {
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+  font-size: 0.85rem;
+  color: var(--destructive);
+}
