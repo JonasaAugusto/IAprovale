@@ -1,17 +1,3 @@
-/* ==========================================================================
-   IAprovale — /App Perfil view (mocked)
-   Perfil is a full main-view panel (#panel-perfil), same pattern as
-   #panel-busca/#panel-admin, not a modal (reviewer feedback: the earlier
-   modal wasn't understood as a screen). Layout: a "Voltar" topbar, a
-   centered page-title intro block (Fraunces, larger than a modal heading;
-   matches the .login-title page-title pattern), then a column of
-   .perfil-section blocks separated by a bottom border for clear visual
-   hierarchy. Tokens only, no hardcoded color literals, mobile-first
-   single column.
-   ========================================================================== */
-
-/* --------------------------------- TOPBAR ------------------------------------ */
-
 .perfil-topbar {
   margin-bottom: 1rem;
 }
@@ -21,15 +7,11 @@
   font-size: 0.88rem;
 }
 
-/* ---------------------------------- VIEW -------------------------------------- */
-
 .perfil-view {
   max-width: 640px;
   margin-inline: auto;
   text-align: left;
 }
-
-/* ----------------------------------- INTRO ------------------------------------- */
 
 .perfil-intro {
   text-align: center;
@@ -38,10 +20,6 @@
   border-bottom: 1px solid var(--border);
 }
 
-/* Título de página: centralizado e maior que um heading de modal comum,
-   mesma família (Fraunces, herdada de h1 em base.css) e o mesmo padrão de
-   clamp() responsivo usado por .login-title (Login/css/login.css), só que
-   maior, pedido explícito do reviewer ("fonte MAIOR"). */
 .perfil-title {
   font-size: clamp(1.9rem, 5vw, 2.5rem);
   margin-bottom: 0.5rem;
@@ -65,12 +43,6 @@
   margin-bottom: 0;
 }
 
-/* -------------------------------- SEÇÕES -------------------------------------- */
-
-/* Cada seção do form (Formação, Localização, ...) é um bloco com espaçamento
-   consistente e uma borda inferior que separa uma da outra, hierarquia
-   clara pedida pelo reviewer. A última seção (Currículo) não leva borda,
-   pois é seguida direto pela linha de ações. */
 .perfil-section {
   margin-bottom: 1.8rem;
   padding-bottom: 1.6rem;
@@ -89,8 +61,6 @@
   margin-bottom: 0.7rem;
 }
 
-/* -------------------------------- ESCOLARIDADE --------------------------------- */
-
 .perfil-check {
   display: flex;
   align-items: center;
@@ -108,15 +78,10 @@
   cursor: pointer;
 }
 
-/* Campo "Qual?": só aparece quando o nível correspondente está marcado.
-   x-transition (Alpine) cuida da transição de opacidade/escala; aqui só o
-   recuo visual que liga o campo ao checkbox pai. */
 .perfil-curso-field {
   margin-left: 1.9rem;
   margin-bottom: 0.6rem;
 }
-
-/* ---------------------------------- SELECTS ------------------------------------ */
 
 .perfil-view .form-field select {
   width: 100%;
@@ -133,8 +98,6 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
-
-/* ----------------------------------- CEP --------------------------------------- */
 
 .perfil-cep-row {
   display: flex;
@@ -165,8 +128,6 @@
   min-height: 1em;
 }
 
-/* -------------------------------- CURRÍCULO ------------------------------------- */
-
 .perfil-anexar-btn {
   position: relative;
   overflow: hidden;
@@ -174,8 +135,6 @@
   margin-bottom: 0.6rem;
 }
 
-/* Input de arquivo nativo empilhado (transparente) sobre o botão estilizado:
-   clique no label ativa o seletor de arquivo do SO. */
 .perfil-file-input {
   position: absolute;
   inset: 0;
@@ -190,8 +149,6 @@
   color: var(--text-muted);
   margin-bottom: 0.6rem;
 }
-
-/* --------------------------------- AÇÕES ---------------------------------------- */
 
 .perfil-actions-row {
   display: flex;
@@ -210,8 +167,6 @@
   font-size: 0.9rem;
   margin-top: 0.9rem;
 }
-
-/* ------------------------------- RESPONSIVO -------------------------------------- */
 
 @media (max-width: 480px) {
   .perfil-cep-row {

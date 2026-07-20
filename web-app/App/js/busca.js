@@ -1,18 +1,6 @@
-/* ==========================================================================
-   IAprovale — /App Busca tab store (Alpine.js CSP build)
-   Registered on alpine:init so the component exists before Alpine scans the
-   DOM. Busca real via window.cfApi.search()/getProfile() (POST /search,
-   GET /profile) — os formatters locais espelham o desktop's ConcursoCard/
-   BuscaTab formatters (desktop/app/ui/concurso_card.py, desktop/app/ui/
-   busca_tab.py) para o card web ter paridade com o app desktop.
-   ========================================================================== */
-
 "use strict";
 
 document.addEventListener("alpine:init", () => {
-  // Tutorial "Como pesquisar" (WBUSCA-04) — copy reproduced VERBATIM from
-  // desktop/app/ui/busca_tab.py::_AJUDA_SECTIONS (v1.5.2 modernized text,
-  // the parity reference for the web).
   const AJUDA_SECTIONS = [
     {
       heading: null,
@@ -65,28 +53,20 @@ document.addEventListener("alpine:init", () => {
     results: [],
 
     usarCurriculo: false,
-    curriculoDisponivel: true, // fail-open default: habilitado até o GET /profile provar que não há currículo
+    curriculoDisponivel: true,
     erro: "",
     emptyMessage: "",
-    _PERFIL_QUERY: "concursos na minha área", // fallback verbatim do desktop
+    _PERFIL_QUERY: "concursos na minha área",
 
-    _tutorialTrigger: null, // gatilho que abriu o tutorial (foco volta nele)
+    _tutorialTrigger: null,
 
-    // Checagem mount-time do toggle "Usar meu currículo": habilita só quando
-    // há currículo salvo e não-vazio; fail-open (mantém habilitado) em erro
-    // de fetch — espelha desktop/app/ui/busca_tab.py::_fetch_curriculo_state.
     init() {
       window.cfApi.getProfile().then((profile) => {
         this.curriculoDisponivel = !!(profile && profile.curriculo && profile.curriculo.trim());
       }).catch(() => {
-        /* fail-open: falha ao buscar perfil, mantém o toggle habilitado */
       });
     },
 
-    // Abre/fecha o modal "Como pesquisar" com o contrato de foco acessível
-    // compartilhado (cfModalAberto/cfModalFechado em js/app.js): foco entra
-    // no diálogo ao abrir e volta ao gatilho ao fechar. $nextTick garante
-    // que o x-show já foi aplicado quando o helper roda.
     abrirTutorial() {
       const el = document.activeElement;
       this._tutorialTrigger = el && typeof el.focus === "function" ? el : null;
@@ -95,16 +75,13 @@ document.addEventListener("alpine:init", () => {
     },
 
     fecharTutorial() {
-      if (!this.tutorialOpen) return; // escape.window dispara mesmo fechado
+      if (!this.tutorialOpen) return;
       this.tutorialOpen = false;
       const trigger = this._tutorialTrigger;
       this._tutorialTrigger = null;
       this.$nextTick(() => window.cfModalFechado(trigger));
     },
 
-    // Dispatch real da busca (POST /search via cfApi) — sem branch por
-    // status HTTP: err.detail já chega correto tanto do rate-limit quanto
-    // da quota diária (QUOTA-01), ambos 429 com mensagens distintas.
     buscar() {
       this._dispatch(this.query);
     },
@@ -130,8 +107,6 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
-    // "AAAA-MM-DD" -> "DD/MM/AAAA"; qualquer outro formato passa intacto.
-    // Espelha _fmt_prazo em concurso_card.py.
     prazoBR(iso) {
       const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
       if (!m) return iso;
@@ -139,13 +114,11 @@ document.addEventListener("alpine:init", () => {
       return `${dia}/${mes}/${ano}`;
     },
 
-    // "AAAA-MM" -> "MM/AAAA". Espelha _fmt_data_futura em concurso_card.py.
     dataFuturaBR(iso) {
       if (!iso || iso.length !== 7 || iso[4] !== "-") return "";
       return `${iso.slice(5)}/${iso.slice(0, 4)}`;
     },
 
-    // uf.toUpperCase() + " · " + Título-case regiao. Espelha _fmt_localizacao.
     localizacao(c) {
       const uf = (c.uf || "").trim().toUpperCase();
       const regiaoRaw = (c.regiao || "").trim();
@@ -181,19 +154,11 @@ document.addEventListener("alpine:init", () => {
       return data ? `${base} (${data})` : base;
     },
 
-    // Só permite abrir http(s): mesmo com dados reais da API (Fase 8+), um
-    // link com esquema perigoso (ex: "javascript:") nunca vira href clicável.
     linkSeguro(c) {
       const link = c?.noticia?.link || "";
       return /^https?:\/\//i.test(link) ? link : "";
     },
 
-    // PITFALLS.md Pitfall 11: writeText() must be the FIRST synchronous
-    // statement in the click handler, before any await, or the browser can
-    // lose the "user gesture" context and silently reject the call.
-    // O feedback "Copiado!" só aparece se a Promise resolver — sem falso
-    // sucesso quando a escrita é rejeitada (permissão negada, contexto
-    // não-seguro em teste local, etc.), e sem unhandled rejection no console.
     copiar(c) {
       navigator.clipboard.writeText(c.noticia.link).then(() => {
         c.copied = true;
@@ -201,7 +166,6 @@ document.addEventListener("alpine:init", () => {
           c.copied = false;
         }, 1500);
       }).catch(() => {
-        /* cópia falhou: mantém "Copiar link" (sem falso "Copiado!") */
       });
     },
   }));

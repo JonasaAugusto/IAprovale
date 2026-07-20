@@ -1,10 +1,3 @@
-/* ==========================================================================
-   IAprovale — shared theme toggle
-   DEFERRED script. Wires #theme-toggle, mirrors homepage's
-   applyTheme/currentTheme logic. Safe to include on every page even if
-   #theme-toggle is missing.
-   ========================================================================== */
-
 "use strict";
 
 const THEME_KEY = "cf-theme";
@@ -19,7 +12,6 @@ function applyTheme(theme) {
   try {
     localStorage.setItem(THEME_KEY, theme);
   } catch (e) {
-    /* localStorage indisponível (ex.: modo privado) — segue sem persistir */
   }
 }
 

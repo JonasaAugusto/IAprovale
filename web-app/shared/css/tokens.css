@@ -1,30 +1,16 @@
-/* ==========================================================================
-   IAprovale — shared design tokens
-   Single source of truth for the NEW pages (Login/App). Extracted VERBATIM
-   from web-app/homepage/css/style.css (light=green / dark=gold theme system).
-   The homepage intentionally KEEPS its own inline copy of this same block —
-   see .planning/research/ARCHITECTURE.md (Client Architecture trade-off,
-   path-depth caveat) for why: do NOT edit homepage/css/style.css to import
-   this file instead, and do NOT delete the homepage's inline copy.
-   ========================================================================== */
-
 :root {
-  /* Tipografia */
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Fraunces", Georgia, "Times New Roman", serif;
 
-  /* Ritmo / forma */
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 24px;
   --container: 1080px;
 
-  /* Transição de troca de tema */
   --theme-transition: background-color 0.32s ease, color 0.32s ease,
     border-color 0.32s ease, box-shadow 0.32s ease;
 }
 
-/* --- TEMA CLARO: verde, fresco e profissional --- */
 :root[data-theme="light"] {
   --bg: #f6fbf8;
   --bg-elev: #ffffff;
@@ -63,15 +49,11 @@
 
   --input-bg: #ffffff;
 
-  /* Ações destrutivas (Desativar/Excluir) — mesmo hex do desktop
-     (COLOR_DESTRUCTIVE_LIGHT em desktop/app/ui/styles.py), pra manter
-     paridade visual entre as duas plataformas. */
   --destructive: #c42b1c;
 
   color-scheme: light;
 }
 
-/* --- TEMA ESCURO: dourado, premium e exclusivo --- */
 :root[data-theme="dark"] {
   --bg: #14110d;
   --bg-elev: #1c1712;
@@ -81,7 +63,7 @@
   --text-strong: #f5efe4;
   --text-muted: #c4b499;
 
-  --accent: #bd996c;      /* ouro base — rgb(189, 153, 108) */
+  --accent: #bd996c;
   --accent-strong: #a8865c;
   --accent-bright: #e9d9b8;
   --accent-soft: #f3e6c8;
@@ -110,9 +92,6 @@
 
   --input-bg: #211b14;
 
-  /* Ações destrutivas (Desativar/Excluir) — mesmo hex do desktop
-     (COLOR_DESTRUCTIVE_DARK em desktop/app/ui/styles.py), pra manter
-     paridade visual entre as duas plataformas. */
   --destructive: #ff99a4;
 
   color-scheme: dark;

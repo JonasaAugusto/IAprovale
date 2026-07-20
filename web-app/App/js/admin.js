@@ -1,21 +1,6 @@
-/* ==========================================================================
-   IAprovale — /App Admin tab store (Alpine.js CSP build)
-   Registered on alpine:init so the component exists before Alpine scans the
-   DOM. Fully mocked (zero network calls): reproduces desktop/app/ui/admin_tab.py
-   anatomy, including add-user row, accent/case-insensitive "Procurar usuário"
-   filter, per-row CRUD actions (Editar nome / Gerar nova senha / Desativar|Reativar /
-   Excluir, hidden on the acting admin's own row), and the three mock modals
-   (password reveal, rename, destructive/state-changing confirms). Real
-   backend wiring (GET/POST/PATCH/DELETE /auth/users) is Phase 7/11; this
-   tab's own visibility here is also mock-only (T-06-10 in the plan's threat
-   model; real server-side require_admin re-verification is out of scope).
-   ========================================================================== */
-
 "use strict";
 
 document.addEventListener("alpine:init", () => {
-  // "jonas" é o admin logado nesta sessão mock; Excluir fica oculto na
-  // própria linha dele, espelhando `user["user_id"] != self._session.user_id`.
   const ACTING_ADMIN_ID = 1;
 
   const MOCK_USERS = [
@@ -26,8 +11,6 @@ document.addEventListener("alpine:init", () => {
     { user_id: 5, username: "roberto", is_admin: false, is_active: true },
   ];
 
-  // Senha "gerada" fixa pro mock de revelação (Adicionar usuário / Gerar
-  // nova senha), sem chamada de rede nesta fase.
   const MOCK_PASSWORD = "Xk7-Trovao-42Q";
 
   Alpine.data("adminTab", () => ({
@@ -38,19 +21,16 @@ document.addEventListener("alpine:init", () => {
     novoUsername: "",
     novoIsAdmin: false,
 
-    // Modal: revelar senha gerada.
     revealOpen: false,
     revealUsername: "",
     revealPassword: "",
     revealCopiado: false,
 
-    // Modal: editar nome (Editar nome).
     renameOpen: false,
     renameUser: null,
     renameValue: "",
     renameErro: "",
 
-    // Modal: confirmação (Desativar/Reativar/Excluir/Gerar nova senha).
     confirmOpen: false,
     confirmTitulo: "",
     confirmCorpo: "",
@@ -58,14 +38,8 @@ document.addEventListener("alpine:init", () => {
     confirmDestrutivo: false,
     confirmAction: null,
 
-    // --- foco acessível dos modais (contrato em js/app.js) -----------------
+    _modalTrigger: null,
 
-    _modalTrigger: null, // gatilho original (foco volta nele ao fechar tudo)
-
-    // Registra o elemento que abriu o modal. Em cadeias de modais
-    // (confirmação -> revelar senha), o activeElement no segundo open é um
-    // botão DENTRO do modal anterior — nesse caso mantém o gatilho original
-    // (o botão da linha do usuário), pra onde o foco deve voltar no fim.
     _registrarTrigger() {
       const el = document.activeElement;
       if (el && typeof el.closest === "function" && el.closest(".modal-backdrop")) return;
@@ -78,17 +52,9 @@ document.addEventListener("alpine:init", () => {
 
     _aoFecharModal() {
       const trigger = this._modalTrigger;
-      // cfModalFechado só restaura o foco (e limpa o lock de scroll) quando
-      // nenhum outro modal segue visível — cadeias ficam corretas de graça.
       this.$nextTick(() => window.cfModalFechado(trigger));
     },
 
-    // Normaliza pra comparação de filtro: sem acentos, caixa ignorada
-    // ("MÁRCOS" -> "marcos"). Espelha _normalizar() em admin_tab.py (que usa
-    // unicodedata.normalize("NFKD", ...) + strip de combining marks +
-    // casefold()). \p{M} (Unicode property escape, flag "u") casa toda
-    // marca de combinação restante após NFKD, evitando listar manualmente
-    // o range de code points U+0300-U+036F.
     normalizar(s) {
       return (s || "")
         .normalize("NFKD")
@@ -106,10 +72,6 @@ document.addEventListener("alpine:init", () => {
       return u.user_id === ACTING_ADMIN_ID;
     },
 
-    // Guard do botão Desativar: mesmo critério do Excluir (oculto na própria
-    // linha do admin logado) — sem isso o único admin de um sistema
-    // invite-only consegue revogar o próprio acesso (self-lockout). A regra
-    // real é reforçada server-side na Fase 7 (PATCH /auth/users).
     podeDesativar(u) {
       return u.is_active && !this.isSelf(u);
     },
@@ -121,8 +83,6 @@ document.addEventListener("alpine:init", () => {
     limparErro() {
       this.erro = "";
     },
-
-    // --- adicionar usuário ------------------------------------------------
 
     adicionar() {
       const username = this.novoUsername.trim();
@@ -142,8 +102,6 @@ document.addEventListener("alpine:init", () => {
       this._revelarSenha(username, MOCK_PASSWORD);
     },
 
-    // --- revelar senha gerada ----------------------------------------------
-
     _revelarSenha(username, senha) {
       this._registrarTrigger();
       this.revealUsername = username;
@@ -153,24 +111,18 @@ document.addEventListener("alpine:init", () => {
       this._aoAbrirModal("reveal-dialog");
     },
 
-    // writeText() como primeira instrução síncrona do handler (Pitfall 11);
-    // "Copiado!" só aparece se a Promise resolver — dizer ao admin que a
-    // senha foi copiada quando não foi seria um falso sucesso perigoso.
     copiarSenha() {
       navigator.clipboard.writeText(this.revealPassword).then(() => {
         this.revealCopiado = true;
       }).catch(() => {
-        /* cópia falhou: mantém "Copiar senha" (sem falso "Copiado!") */
       });
     },
 
     fecharReveal() {
-      if (!this.revealOpen) return; // escape.window dispara mesmo fechado
+      if (!this.revealOpen) return;
       this.revealOpen = false;
       this._aoFecharModal();
     },
-
-    // --- editar nome ---------------------------------------------------------
 
     abrirRenomear(u) {
       this._registrarTrigger();
@@ -193,12 +145,10 @@ document.addEventListener("alpine:init", () => {
     },
 
     cancelarRenomear() {
-      if (!this.renameOpen) return; // escape.window dispara mesmo fechado
+      if (!this.renameOpen) return;
       this.renameOpen = false;
       this._aoFecharModal();
     },
-
-    // --- ações com confirmação (mock) --------------------------------------
 
     gerarSenha(u) {
       this._abrirConfirmacao(
@@ -211,9 +161,6 @@ document.addEventListener("alpine:init", () => {
     },
 
     desativar(u) {
-      // Defesa em profundidade além do x-show="podeDesativar(u)" no HTML:
-      // bloqueia a auto-desativação mesmo se o método for alcançado por
-      // outro caminho (espelha a regra que o backend imporá na Fase 7).
       if (this.isSelf(u)) {
         this.mostrarErro("Você não pode desativar a sua própria conta.");
         return;
@@ -265,9 +212,6 @@ document.addEventListener("alpine:init", () => {
     },
 
     confirmarAcao() {
-      // A action pode abrir OUTRO modal (Gerar nova senha -> revelar senha):
-      // ela roda antes do fechamento, e cfModalFechado detecta o modal
-      // encadeado ainda visível e mantém lock/foco lá dentro.
       if (this.confirmAction) this.confirmAction();
       this.confirmOpen = false;
       this.confirmAction = null;
@@ -275,7 +219,7 @@ document.addEventListener("alpine:init", () => {
     },
 
     cancelarConfirmacao() {
-      if (!this.confirmOpen) return; // escape.window dispara mesmo fechado
+      if (!this.confirmOpen) return;
       this.confirmOpen = false;
       this.confirmAction = null;
       this._aoFecharModal();

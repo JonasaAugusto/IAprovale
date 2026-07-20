@@ -1,20 +1,8 @@
-/* ==========================================================================
-   IAprovale — /App Busca tab (mocked)
-   Query/actions rows, result card anatomy (NOVO pill, cargo chips, futuro
-   note, copiar link), the tutorial modal, and the skeleton loading card.
-   Tokens only, mobile-first. Staggered card entrance is automatically
-   gated by base.css's prefers-reduced-motion block (universal selector).
-   ========================================================================== */
-
-/* -------------------------------- MENSAGENS ------------------------------------ */
-
 .busca-erro {
   color: var(--destructive);
   margin-bottom: 0.9rem;
   font-size: 0.88rem;
 }
-
-/* ------------------------------ QUERY ROW ----------------------------------- */
 
 .busca-query-row {
   display: flex;
@@ -44,8 +32,6 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
-
-/* ---------------------------- ACTIONS ROW ------------------------------------ */
 
 .busca-actions-row {
   display: flex;
@@ -122,8 +108,6 @@
   opacity: 0.55;
 }
 
-/* ------------------------------- SKELETON ------------------------------------ */
-
 .busca-skeleton-list {
   display: grid;
   gap: 1rem;
@@ -133,23 +117,17 @@
   min-height: 168px;
 }
 
-/* -------------------------------- EMPTY --------------------------------------- */
-
 .busca-empty {
   text-align: center;
   color: var(--text-muted);
   padding: 2.5rem 0;
 }
 
-/* -------------------------------- RESULTS -------------------------------------- */
-
 .busca-results {
   display: grid;
   gap: 1rem;
 }
 
-/* Staggered entrance — reduced-motion users get instant (0.01ms) transitions
-   via base.css's universal `*` rule, no separate media query needed here. */
 .concurso-card {
   background: var(--bg-elev);
   border: 1px solid var(--border);
@@ -271,17 +249,10 @@
   flex: 0 0 auto;
 }
 
-/* -------------------------------- MODAL ---------------------------------------- */
-
-/* Scroll lock enquanto um modal está aberto — aplicado/removido por
-   cfModalAberto/cfModalFechado (js/app.js), paridade com body.modal-open
-   da homepage. */
 body.modal-open {
   overflow: hidden;
 }
 
-/* O diálogo recebe foco programático (tabindex="-1") quando não há outro
-   focável — sem anel de foco visual nesse caso (não é alvo de Tab). */
 .modal-dialog:focus {
   outline: none;
 }
@@ -352,8 +323,6 @@ body.modal-open {
   color: var(--text);
   font-size: 0.92rem;
 }
-
-/* ------------------------------- RESPONSIVO ------------------------------------- */
 
 @media (max-width: 640px) {
   .busca-query-row {

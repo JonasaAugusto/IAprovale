@@ -1,22 +1,8 @@
-/* ==========================================================================
-   IAprovale — /App Admin tab (mocked)
-   Add-user row, search field, user list (table-like row at desktop,
-   collapsing to stacked cards at phone width, WEB-04 responsiveness), and
-   destructive-action button coloring (mirrors the desktop's Desativar/
-   Excluir emphasis via the shared --destructive token). Extends the
-   .modal-backdrop/.modal-dialog primitives from css/busca.css for the
-   password-reveal/rename/confirm modals. Tokens only, mobile-first.
-   ========================================================================== */
-
-/* -------------------------------- MENSAGENS ------------------------------------ */
-
 .admin-erro {
   color: var(--destructive);
   margin-bottom: 0.9rem;
   font-size: 0.88rem;
 }
-
-/* -------------------------------- ADD-USER ROW ---------------------------------- */
 
 .admin-add-row {
   display: flex;
@@ -57,8 +43,6 @@
   accent-color: var(--accent);
 }
 
-/* ---------------------------------- SEARCH -------------------------------------- */
-
 .admin-search-input {
   display: block;
   width: 100%;
@@ -76,8 +60,6 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
-
-/* -------------------------------- USER LIST -------------------------------------- */
 
 .admin-user-list {
   display: flex;
@@ -154,8 +136,6 @@
   padding: 2rem 0;
 }
 
-/* --------------------------------- MODAIS ----------------------------------------- */
-
 .admin-reveal-nota {
   font-size: 0.85rem;
   color: var(--text-muted);
@@ -172,15 +152,12 @@
   flex: 1;
 }
 
-/* ------------------------------- RESPONSIVO ---------------------------------------- */
-
 @media (max-width: 640px) {
   .admin-add-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  /* Colapsa a linha "tabela" em card empilhado no telefone. */
   .admin-user-row {
     flex-direction: column;
     align-items: stretch;

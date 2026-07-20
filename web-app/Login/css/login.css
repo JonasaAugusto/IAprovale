@@ -1,9 +1,3 @@
-/* ==========================================================================
-   IAprovale — /Login page-specific layout
-   Only Login layout/spacing here — colors come from shared/css/tokens.css,
-   reset/components come from shared/css/base.css.
-   ========================================================================== */
-
 .login-body {
   display: flex;
   flex-direction: column;

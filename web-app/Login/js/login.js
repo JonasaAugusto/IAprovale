@@ -1,11 +1,3 @@
-/* ==========================================================================
-   IAprovale — /Login submit handler
-   Login real: chama window.cfApi.login, persiste a sessão no sessionStorage,
-   mostra estado "Conectando ao servidor..." com retry limitado (só em falha
-   de conexão/timeout, nunca em resposta HTTP recebida) e exibe erros do
-   backend de forma XSS-safe (sempre via textContent, sem markup bruto).
-   ========================================================================== */
-
 "use strict";
 
 (function () {
@@ -17,7 +9,7 @@
 
   var ENTRAR_TEXT = button.textContent;
   var CONNECTING_TEXT = "Conectando ao servidor...";
-  var MAX_TENTATIVAS_CONEXAO = 2; // tentativas EXTRAS além da primeira (3 no total)
+  var MAX_TENTATIVAS_CONEXAO = 2;
 
   function isConnectionFailure(err) {
     return err && (err.name === "TypeError" || err.name === "AbortError");
@@ -66,7 +58,6 @@
           lastError = err;
           if (isConnectionFailure(err) && tentativasConexao < MAX_TENTATIVAS_CONEXAO) {
             tentativasConexao += 1;
-            // Mantém "Conectando ao servidor..." — feedback contínuo entre tentativas.
             continue;
           }
           break;
@@ -91,7 +82,6 @@
         );
         sessionStorage.setItem("cf-last-activity", String(Date.now()));
       } catch (e) {
-        /* sessionStorage indisponível (ex.: modo privado) — segue mesmo assim */
       }
 
       window.location.href = "../App/";

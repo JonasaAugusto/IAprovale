@@ -6,10 +6,6 @@
   <meta name="description" content="IAprovale — busque concursos públicos compatíveis com a sua formação.">
   <title>IAprovale — App</title>
 
-  <!-- Note: one directive that would restrict embedding in an iframe is
-       intentionally omitted here — it is silently ignored when set via
-       <meta http-equiv> (GitHub Pages can't send custom HTTP headers either).
-       Clickjacking is instead mitigated by shared/js/boot.js's frame-busting. -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
     script-src 'self' https://cdn.jsdelivr.net;
@@ -23,26 +19,14 @@
     object-src 'none';
   ">
 
-  <!-- Aplica o tema e faz o frame-busting antes da primeira pintura -->
   <script src="../shared/js/boot.js"></script>
 
-  <!-- Guard bloqueante de sessão: SEM defer, roda antes de qualquer pintura
-       de conteúdo autenticado (checa token + cutoff de 6h de inatividade,
-       redireciona pro /Login se ausente/expirado — ver shared/js/auth-guard.js). -->
   <script src="../shared/js/auth-guard.js"></script>
 
-  <!-- Google Fonts: Inter (corpo/UI) + Fraunces (títulos editoriais) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Logo oficial do app na guia do navegador (favicon) e em telas iOS.
-       Caminho "../assets/..." (NÃO "../homepage/assets/..."): no artifact
-       montado pelo workflow, o conteúdo de web-app/homepage/ é copiado pra
-       RAIZ do _site (a homepage "canônica" vive em "/"), e /homepage/ é só
-       um stub de redirect sem assets próprios (ver .github/workflows/pages.yml
-       e a decisão registrada em 06-01-SUMMARY.md); usar "../homepage/assets/"
-       aqui resultava em 404 no logo/favicon do site publicado. -->
   <link rel="icon" href="../assets/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="../assets/logo.png">
   <link rel="apple-touch-icon" href="../assets/logo.png">
@@ -66,11 +50,6 @@
       </a>
 
       <div class="app-header-actions">
-        <!-- Perfil é uma VIEW dentro do #app-main (#panel-perfil, mesmo
-             padrão de #panel-busca/#panel-admin: x-show="tab === 'perfil'"),
-             não mais um modal (reviewer relatou não ter entendido o modal).
-             appShell.openPerfil() troca o painel principal e guarda a aba
-             anterior pra "Voltar" (ver js/app.js). -->
         <button class="btn btn-ghost app-header-btn" type="button" x-on:click="openPerfil()">Perfil</button>
         <button class="btn btn-ghost app-header-btn" type="button" x-on:click="sair()">Sair</button>
 
@@ -93,9 +72,6 @@
       </div>
     </div>
 
-    <!-- Some quando o Perfil está aberto: Busca/Admin ficam irrelevantes
-         nesse contexto e "Voltar" (dentro de #panel-perfil) já é o caminho
-         de volta claro que o reviewer pediu. -->
     <nav class="app-tabbar container" x-show="tab !== 'perfil'" aria-label="Navegação do app">
       <button
         type="button"
@@ -150,7 +126,6 @@
         <button type="button" class="btn btn-ghost busca-btn-pdf" disabled aria-disabled="true">Gerar PDF</button>
       </div>
 
-      <!-- Skeleton de carregamento (mock): visível enquanto loading=true -->
       <div class="busca-skeleton-list" x-show="!!loading" aria-hidden="true">
         <div class="concurso-card skeleton busca-skeleton-card"></div>
         <div class="concurso-card skeleton busca-skeleton-card"></div>
@@ -201,11 +176,6 @@
         </template>
       </div>
 
-      <!-- Modal "Como pesquisar" (WBUSCA-04, copy verbatim de busca_tab.py).
-           x-cloak: evita o flash do chrome estático (X/textos) antes do
-           Alpine hidratar - ver [x-cloak] em shared/css/base.css.
-           abrirTutorial()/fecharTutorial() implementam o contrato de foco
-           acessível (id + tabindex="-1" no diálogo, ver js/app.js). -->
       <div
         class="modal-backdrop"
         x-cloak
@@ -230,11 +200,6 @@
       </div>
     </section>
 
-    <!-- MOCK: aba Admin sempre visível nesta fase; o gating dinâmico por
-         is_admin (autorização server-side) é escopo da Fase 7 (WEB-04).
-         x-cloak: tab começa em "busca", então este painel deve ficar oculto
-         no primeiro paint. Sem x-cloak ele piscava visível (empilhado sob
-         Busca) até o Alpine hidratar (ver [x-cloak] em shared/css/base.css). -->
     <section id="panel-admin" x-cloak x-show="tab === 'admin'" x-data="adminTab" role="tabpanel" aria-label="Admin">
       <p class="admin-erro" x-show="!!erro" x-text="erro"></p>
 
@@ -272,9 +237,6 @@
             <div class="admin-user-actions">
               <button type="button" class="btn btn-ghost admin-action-btn" x-on:click="abrirRenomear(u)">Editar nome</button>
               <button type="button" class="btn btn-ghost admin-action-btn" x-on:click="gerarSenha(u)">Gerar nova senha</button>
-              <!-- podeDesativar(u) = u.is_active && !isSelf(u): mesmo guard
-                   do Excluir — o admin logado não pode se auto-desativar
-                   (self-lockout); regra reforçada server-side na Fase 7. -->
               <button
                 type="button"
                 class="btn btn-ghost admin-action-btn admin-action-destructive"
@@ -299,9 +261,6 @@
         <p class="admin-empty" x-show="filtrados.length === 0">Nenhum usuário encontrado.</p>
       </div>
 
-      <!-- Modal: revelar senha gerada (Adicionar usuário / Gerar nova senha).
-           x-cloak: evita o flash do chrome estático antes do Alpine hidratar
-           (ver [x-cloak] em shared/css/base.css). -->
       <div
         class="modal-backdrop"
         x-cloak
@@ -333,9 +292,6 @@
         </div>
       </div>
 
-      <!-- Modal: editar nome (Editar nome).
-           x-cloak: evita o flash do chrome estático antes do Alpine hidratar
-           (ver [x-cloak] em shared/css/base.css). -->
       <div
         class="modal-backdrop"
         x-cloak
@@ -362,11 +318,6 @@
         </div>
       </div>
 
-      <!-- Modal: confirmação (Desativar/Reativar/Excluir/Gerar nova senha).
-           x-cloak: corrige o bug reportado pelo reviewer (modal aparecia
-           vazio, só com o "×" e "Cancelar"). O chrome estático era exibido
-           antes do Alpine hidratar confirmTitulo/confirmCorpo/confirmTextoBotao
-           (ver [x-cloak] em shared/css/base.css). -->
       <div
         class="modal-backdrop"
         x-cloak
@@ -396,17 +347,6 @@
       </div>
     </section>
 
-    <!-- MOCK: view de Perfil completa, espelhando desktop/app/ui/perfil_dialog.py.
-         Reviewer relatou não ter entendido o modal anterior; agora é uma
-         TELA dentro de #app-main (mesmo padrão de #panel-busca/#panel-admin:
-         x-show="tab === 'perfil'", acionada pelo botão "Perfil" do header
-         via appShell.openPerfil()), com "Voltar" (topo e rodapé) chamando
-         appShell.voltarDoPerfil(). Salvar persiste em localStorage (mock,
-         chave "cf-perfil-mock") e o form re-hidrata a partir dela ao carregar
-         a página (init(), ver js/perfil.js); a persistência real via
-         PUT /profile fica pra Fase 7+. -->
-    <!-- x-cloak: tab começa em "busca", este painel deve ficar oculto no
-         primeiro paint (mesmo motivo do #panel-admin acima). -->
     <section id="panel-perfil" x-cloak x-show="tab === 'perfil'" x-data="perfilForm" role="tabpanel" aria-label="Perfil">
       <div class="perfil-topbar">
         <button type="button" class="btn btn-ghost perfil-voltar-btn" x-on:click="voltarDoPerfil()">
@@ -471,13 +411,6 @@
             <input type="text" x-model="formacaoFutura" placeholder="ex: Mestrado em Saúde Coletiva">
           </div>
           <div class="form-field">
-            <!-- x-bind:value (não x-model) de propósito: combinar x-model com
-                 um x-on:input próprio no MESMO campo cria uma corrida entre
-                 os dois listeners nativos de "input", e o listener interno do
-                 x-model pode sobrescrever o valor mascarado com o texto cru
-                 a cada tecla, fazendo a máscara "não aplicar" visualmente
-                 (bug reportado no reviewer). x-bind:value é só leitura de
-                 volta pro DOM; maskData() é o único escritor de dataFutura. -->
             <input
               type="text"
               x-bind:value="dataFutura"
@@ -559,18 +492,6 @@
     </section>
   </main>
 
-  <!-- Ordem crítica: os módulos que chamam Alpine.data(...) via alpine:init
-       devem carregar e EXECUTAR antes do script core do Alpine. O core, ao
-       terminar de executar, agenda Alpine.start() num queueMicrotask — que
-       roda antes do PRÓXIMO <script defer> da fila começar. Se o core viesse
-       primeiro (como estava), Alpine.start() dispatch'ava "alpine:init" e
-       varria o DOM antes de theme.js/api.js/app.js/busca.js/perfil.js/
-       admin.js sequer terem registrado seus listeners — todo x-data
-       ("appShell", "buscaTab", "adminTab", "perfilForm") caía no fallback de
-       escopo vazio (só os magics do próprio Alpine), quebrando x-show/x-on
-       em toda a página. Ver alpinejs.dev/essentials/installation
-       ("if you're using Alpine.data() ... include those scripts before
-       Alpine's core file"). -->
   <script defer src="../shared/js/theme.js"></script>
   <script defer src="../shared/js/api.js"></script>
   <script defer src="js/app.js"></script>

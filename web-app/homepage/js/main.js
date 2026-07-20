@@ -1,18 +1,8 @@
-/* ==========================================================================
-   Concurso Finder — homepage
-   Vanilla JS: tema, modais (com foco acessível), scroll-reveal, formulário.
-   ========================================================================== */
-
 "use strict";
 
-/* ----------------------------- CONFIGURAÇÃO ------------------------------ */
-
-// COLOQUE O CAMINHO OU LINK AQUI
 const LOGIN_REDIRECT_URL = "Login/";
 
-const CONTACT_FORM_ACTION = "https://submit-form.com/1pIuu489V"; // Trocar aqui se quiser um formulário dedicado
-
-/* -------------------------------- TEMA ----------------------------------- */
+const CONTACT_FORM_ACTION = "https://submit-form.com/1pIuu489V";
 
 const THEME_KEY = "cf-theme";
 const root = document.documentElement;
@@ -26,28 +16,18 @@ function applyTheme(theme) {
   try {
     localStorage.setItem(THEME_KEY, theme);
   } catch (e) {
-    /* localStorage indisponível (ex.: modo privado) — segue sem persistir */
   }
-  // Informa o backend do formulário (submit-form.com) qual tema está ativo
   const feedbackDark = document.getElementById("feedback-dark");
   if (feedbackDark) feedbackDark.value = theme === "dark" ? "true" : "false";
 }
 
-// Sincroniza estado inicial (o atributo já foi definido no <head> antes da pintura)
 applyTheme(currentTheme());
 
 document.getElementById("theme-toggle").addEventListener("click", () => {
   applyTheme(currentTheme() === "dark" ? "light" : "dark");
 });
 
-/* ------------------------------- MODAIS ----------------------------------
-   - Abrem com transição suave (classe .is-open após remover [hidden])
-   - Fecham por: botão explícito, clique no backdrop, tecla Escape
-   - Foco entra no modal ao abrir e volta ao botão de origem ao fechar
-   - Tab fica preso dentro do modal aberto (focus trap)
---------------------------------------------------------------------------- */
-
-const openModals = []; // pilha — Escape fecha o modal do topo
+const openModals = [];
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -57,7 +37,6 @@ function openModal(backdrop, triggerEl) {
 
   backdrop.dataset.triggerId = triggerEl && triggerEl.id ? triggerEl.id : "";
   backdrop.removeAttribute("hidden");
-  // Força reflow para a transição de entrada funcionar
   void backdrop.offsetWidth;
   backdrop.classList.add("is-open");
 
@@ -98,7 +77,6 @@ function closeModal(backdrop) {
       finish();
     };
     backdrop.addEventListener("transitionend", onEnd);
-    // Fallback caso transitionend não dispare
     setTimeout(() => {
       if (!done) {
         done = true;
@@ -109,7 +87,6 @@ function closeModal(backdrop) {
   }
 }
 
-// Fechar: botão explícito e clique no backdrop
 document.querySelectorAll(".modal-backdrop").forEach((backdrop) => {
   backdrop.addEventListener("click", (ev) => {
     if (ev.target === backdrop) closeModal(backdrop);
@@ -119,7 +96,6 @@ document.querySelectorAll(".modal-backdrop").forEach((backdrop) => {
   });
 });
 
-// Escape fecha o modal do topo; Tab fica preso no modal aberto
 document.addEventListener("keydown", (ev) => {
   if (openModals.length === 0) return;
   const top = openModals[openModals.length - 1];
@@ -148,8 +124,6 @@ document.addEventListener("keydown", (ev) => {
   }
 });
 
-/* --------------------------- GATILHOS DOS CTAs --------------------------- */
-
 const modalTech = document.getElementById("modal-tech");
 const modalLogin = document.getElementById("modal-login");
 const modalContact = document.getElementById("modal-contact");
@@ -160,23 +134,16 @@ const ctaSecondary = document.getElementById("cta-secondary");
 ctaPrimary.addEventListener("click", () => openModal(modalLogin, ctaPrimary));
 ctaSecondary.addEventListener("click", () => openModal(modalTech, ctaSecondary));
 
-// Modal B — "Sim": redireciona para a URL configurada no topo deste arquivo
 document.getElementById("login-yes").addEventListener("click", () => {
   window.location.href = LOGIN_REDIRECT_URL;
 });
 
-// Modal B — "Não": fecha e abre o formulário de contato (Modal C)
 document.getElementById("login-no").addEventListener("click", () => {
   closeModal(modalLogin);
   openModal(modalContact, ctaPrimary);
 });
 
-/* ------------------------- FORMULÁRIO DE CONTATO -------------------------- */
-
-// Fonte única da verdade para o endpoint do formulário
 document.getElementById("contact-form").setAttribute("action", CONTACT_FORM_ACTION);
-
-/* ----------------------------- SCROLL-REVEAL ------------------------------ */
 
 const revealEls = document.querySelectorAll(".reveal");
 const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -197,7 +164,5 @@ if (reduceMotionQuery.matches || !("IntersectionObserver" in window)) {
   );
   revealEls.forEach((el) => observer.observe(el));
 }
-
-/* -------------------------------- RODAPÉ ---------------------------------- */
 
 document.getElementById("footer-year").textContent = new Date().getFullYear();
