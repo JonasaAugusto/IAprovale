@@ -56,7 +56,6 @@
 
 .app-main {
   flex: 1;
-  width: 100%;
   padding-block: 1.5rem 3rem;
   padding-inline: 3rem;
 }
