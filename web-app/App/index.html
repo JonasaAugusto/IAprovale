@@ -552,14 +552,24 @@
     </section>
   </main>
 
-  <!-- Alpine.js CSP build (sem unsafe-eval) — carregado primeiro para que os
-       componentes registrados via alpine:init existam antes da inicialização. -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.15.12/dist/cdn.min.js" integrity="sha384-MKLWq9B+VC0W3U8kDIBEsSu8uCnQ1B0UQpRaB+F7uR5ocXFbymMUKuLRntu5LLdu" crossorigin="anonymous"></script>
+  <!-- Ordem crítica: os módulos que chamam Alpine.data(...) via alpine:init
+       devem carregar e EXECUTAR antes do script core do Alpine. O core, ao
+       terminar de executar, agenda Alpine.start() num queueMicrotask — que
+       roda antes do PRÓXIMO <script defer> da fila começar. Se o core viesse
+       primeiro (como estava), Alpine.start() dispatch'ava "alpine:init" e
+       varria o DOM antes de theme.js/api.js/app.js/busca.js/perfil.js/
+       admin.js sequer terem registrado seus listeners — todo x-data
+       ("appShell", "buscaTab", "adminTab", "perfilForm") caía no fallback de
+       escopo vazio (só os magics do próprio Alpine), quebrando x-show/x-on
+       em toda a página. Ver alpinejs.dev/essentials/installation
+       ("if you're using Alpine.data() ... include those scripts before
+       Alpine's core file"). -->
   <script defer src="../shared/js/theme.js"></script>
   <script defer src="../shared/js/api.js"></script>
   <script defer src="js/app.js"></script>
   <script defer src="js/busca.js"></script>
   <script defer src="js/perfil.js"></script>
   <script defer src="js/admin.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.15.12/dist/cdn.min.js" integrity="sha384-MKLWq9B+VC0W3U8kDIBEsSu8uCnQ1B0UQpRaB+F7uR5ocXFbymMUKuLRntu5LLdu" crossorigin="anonymous"></script>
 </body>
 </html>
