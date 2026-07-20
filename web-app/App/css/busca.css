@@ -359,6 +359,7 @@ body.modal-open {
   .busca-btn-buscar,
   .busca-btn-perfil {
     width: 100%;
+    flex: 0 0 auto;
   }
 
   .busca-actions-row {
