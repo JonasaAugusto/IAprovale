@@ -189,12 +189,11 @@
 
             <div class="concurso-card-link-row" x-show="!!linkSeguro(c)">
               <a
-                class="concurso-card-link"
+                class="btn btn-ghost concurso-card-vermais"
                 x-bind:href="linkSeguro(c)"
-                x-text="linkSeguro(c)"
                 target="_blank"
                 rel="noopener noreferrer"
-              ></a>
+              >Ver mais</a>
               <button type="button" class="btn btn-ghost concurso-card-copiar" x-on:click="copiar(c)" x-text="c.copied ? 'Copiado!' : 'Copiar link'"></button>
             </div>
           </article>
