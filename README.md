@@ -1,6 +1,6 @@
 # IAprovale (Concurso Finder)
 
-Buscador de concursos públicos privado e por convite, com IA. O usuário descreve em linguagem natural o que procura (ex: *"concurso na área de saúde com graduação em enfermagem"*) e o sistema filtra automaticamente apenas os concursos com inscrições abertas que aceitam a formação informada.
+Buscador de concursos públicos privado e por convite, com IA. O usuário descreve em linguagem natural o que procura (ex: *"concurso na área de saúde com graduação em enfermagem"*) e o sistema filtra automaticamente apenas os concursos com inscrições abertas que aceitam a formação informada, a pesquisa também é alimentada por um sistema de Formulário na aba de Perfil.
 
 **Versões:** desktop **v1.5.1** (Windows) · web app **v2.0 em desenvolvimento** (GitHub Pages)
 
