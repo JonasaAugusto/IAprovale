@@ -75,6 +75,7 @@
   .header-inner,
   .app-tabbar,
   .app-main {
+    width: 100%;
     padding-inline: 1.25rem;
   }
 
