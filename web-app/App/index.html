@@ -118,6 +118,7 @@
 
   <main class="app-main container">
     <section id="panel-busca" x-show="tab === 'busca'" x-data="buscaTab" role="tabpanel" aria-label="Busca">
+      <p class="busca-erro" x-show="!!erro" x-text="erro"></p>
 
       <div class="busca-query-row">
         <input
@@ -141,7 +142,7 @@
         <button type="button" class="busca-link-ajuda" x-on:click="abrirTutorial()">Como pesquisar</button>
 
         <label class="busca-switch">
-          <input type="checkbox" class="busca-switch-input" disabled aria-label="Usar meu currículo (indisponível nesta fase)">
+          <input type="checkbox" class="busca-switch-input" x-model="usarCurriculo" x-bind:disabled="!curriculoDisponivel" aria-label="Usar meu currículo">
           <span class="busca-switch-track" aria-hidden="true"></span>
           <span class="busca-switch-label">Usar meu currículo</span>
         </label>
@@ -156,7 +157,7 @@
         <div class="concurso-card skeleton busca-skeleton-card"></div>
       </div>
 
-      <p class="busca-empty" x-show="!!isEmpty">Nenhum concurso encontrado com esses critérios. Tente ajustar sua busca ou sua formação salva.</p>
+      <p class="busca-empty" x-show="!!isEmpty" x-text="emptyMessage || 'Nenhum concurso encontrado com esses critérios. Tente ajustar sua busca ou sua formação salva.'"></p>
 
       <div class="busca-results" x-show="!loading">
         <template x-for="c in results" x-bind:key="c.titulo">

@@ -115,5 +115,14 @@ window.cfApi = (function () {
     logout: function () {
       return request("POST", "/auth/logout", { auth: true });
     },
+    getProfile: function () {
+      return request("GET", "/profile", { auth: true });
+    },
+    search: function (query, usarCurriculo) {
+      return request("POST", "/search", {
+        json: { query: query, usar_curriculo: !!usarCurriculo },
+        auth: true,
+      });
+    },
   };
 })();
