@@ -6,6 +6,14 @@
    gated by base.css's prefers-reduced-motion block (universal selector).
    ========================================================================== */
 
+/* -------------------------------- MENSAGENS ------------------------------------ */
+
+.busca-erro {
+  color: var(--destructive);
+  margin-bottom: 0.9rem;
+  font-size: 0.88rem;
+}
+
 /* ------------------------------ QUERY ROW ----------------------------------- */
 
 .busca-query-row {

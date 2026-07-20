@@ -1,10 +1,10 @@
 /* ==========================================================================
    IAprovale — /App Busca tab store (Alpine.js CSP build)
    Registered on alpine:init so the component exists before Alpine scans the
-   DOM. Fully mocked (zero network calls): a static results array + local
-   formatters mirroring the desktop's ConcursoCard/BuscaTab formatters
-   (desktop/app/ui/concurso_card.py, desktop/app/ui/busca_tab.py) so the
-   web card anatomy has parity with the desktop app.
+   DOM. Busca real via window.cfApi.search()/getProfile() (POST /search,
+   GET /profile) — os formatters locais espelham o desktop's ConcursoCard/
+   BuscaTab formatters (desktop/app/ui/concurso_card.py, desktop/app/ui/
+   busca_tab.py) para o card web ter paridade com o app desktop.
    ========================================================================== */
 
 "use strict";
@@ -56,72 +56,32 @@ document.addEventListener("alpine:init", () => {
     },
   ];
 
-  // Mock concursos (pt-BR, realistic) — demonstrates every card feature:
-  // NOVO badge, localização, chips com "+N outros", nota de formação futura,
-  // prazo DD/MM/AAAA, prazo não-ISO passando intacto, e copiar link.
-  const MOCK_RESULTS = [
-    {
-      titulo: "Prefeitura de São João del-Rei — Concurso Público 2026",
-      is_new: true,
-      uf: "MG",
-      regiao: "sudeste",
-      cargos_compativeis: [
-        "Enfermeiro",
-        "Técnico de Enfermagem",
-        "Médico",
-        "Agente Comunitário de Saúde",
-        "Fisioterapeuta",
-        "Nutricionista",
-        "Farmacêutico",
-      ],
-      futuro_match: true,
-      data_formacao_futura: "2027-12",
-      datas: { fim: "2026-08-15" },
-      noticia: { link: "https://www.pciconcursos.com.br/concurso/prefeitura-de-sao-joao-del-rei-mg-2026/" },
-      expanded: false,
-      copied: false,
-    },
-    {
-      titulo: "Tribunal Regional Federal da 1ª Região — Analista Judiciário",
-      is_new: false,
-      uf: "BA",
-      regiao: "nordeste",
-      cargos: [
-        "Analista Judiciário — Área Judiciária",
-        "Analista Judiciário — Área Administrativa",
-        "Técnico Judiciário",
-      ],
-      futuro_match: false,
-      data_formacao_futura: null,
-      datas: { fim: "2026-09-01" },
-      noticia: { link: "https://www.pciconcursos.com.br/concurso/trf-1a-regiao-analista-judiciario-2026/" },
-      expanded: false,
-      copied: false,
-    },
-    {
-      titulo: "Secretaria de Educação de Fortaleza — Professor",
-      is_new: true,
-      uf: "CE",
-      regiao: "nordeste",
-      cargos: ["Professor de Matemática", "Professor de Português"],
-      futuro_match: false,
-      data_formacao_futura: null,
-      datas: { fim: "não informado" },
-      noticia: { link: "https://www.pciconcursos.com.br/concurso/secretaria-educacao-fortaleza-professor-2026/" },
-      expanded: false,
-      copied: false,
-    },
-  ];
-
   Alpine.data("buscaTab", () => ({
     query: "",
     loading: false,
     isEmpty: false,
     tutorialOpen: false,
     ajudaSections: AJUDA_SECTIONS,
-    results: MOCK_RESULTS,
+    results: [],
+
+    usarCurriculo: false,
+    curriculoDisponivel: true, // fail-open default: habilitado até o GET /profile provar que não há currículo
+    erro: "",
+    emptyMessage: "",
+    _PERFIL_QUERY: "concursos na minha área", // fallback verbatim do desktop
 
     _tutorialTrigger: null, // gatilho que abriu o tutorial (foco volta nele)
+
+    // Checagem mount-time do toggle "Usar meu currículo": habilita só quando
+    // há currículo salvo e não-vazio; fail-open (mantém habilitado) em erro
+    // de fetch — espelha desktop/app/ui/busca_tab.py::_fetch_curriculo_state.
+    init() {
+      window.cfApi.getProfile().then((profile) => {
+        this.curriculoDisponivel = !!(profile && profile.curriculo && profile.curriculo.trim());
+      }).catch(() => {
+        /* fail-open: falha ao buscar perfil, mantém o toggle habilitado */
+      });
+    },
 
     // Abre/fecha o modal "Como pesquisar" com o contrato de foco acessível
     // compartilhado (cfModalAberto/cfModalFechado em js/app.js): foco entra
@@ -142,22 +102,32 @@ document.addEventListener("alpine:init", () => {
       this.$nextTick(() => window.cfModalFechado(trigger));
     },
 
-    // Mock search dispatch — no network call, just demonstrates the
-    // skeleton loading state for ~900ms before re-showing the same mock
-    // results (this plan is fully mocked; real wiring lands in Phase 7+).
+    // Dispatch real da busca (POST /search via cfApi) — sem branch por
+    // status HTTP: err.detail já chega correto tanto do rate-limit quanto
+    // da quota diária (QUOTA-01), ambos 429 com mensagens distintas.
     buscar() {
-      this._simular();
+      this._dispatch(this.query);
     },
 
     buscarComPerfil() {
-      this._simular();
+      const q = (this.query || "").trim() || this._PERFIL_QUERY;
+      this._dispatch(q);
     },
 
-    _simular() {
+    async _dispatch(query) {
+      this.erro = "";
+      this.isEmpty = false;
       this.loading = true;
-      setTimeout(() => {
+      try {
+        const resp = await window.cfApi.search(query, this.usarCurriculo);
+        this.results = resp.results || [];
+        this.isEmpty = !!resp.is_empty;
+        this.emptyMessage = resp.message || "";
+      } catch (err) {
+        this.erro = (err && err.detail) || "Não foi possível completar a busca. Tente novamente.";
+      } finally {
         this.loading = false;
-      }, 900);
+      }
     },
 
     // "AAAA-MM-DD" -> "DD/MM/AAAA"; qualquer outro formato passa intacto.
