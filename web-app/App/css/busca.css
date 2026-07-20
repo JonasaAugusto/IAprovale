@@ -71,6 +71,11 @@
   font-size: 0.88rem;
   color: var(--text-muted);
   opacity: 0.75;
+  cursor: pointer;
+}
+
+.busca-switch:has(.busca-switch-input:disabled) {
+  cursor: not-allowed;
 }
 
 .busca-switch-input {
@@ -109,8 +114,7 @@
   background: var(--accent);
 }
 
-.busca-btn-pdf[disabled],
-.busca-switch {
+.busca-btn-pdf[disabled] {
   cursor: not-allowed;
 }
 

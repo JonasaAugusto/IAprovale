@@ -82,7 +82,7 @@ window.cfApi = (function () {
             })
             .then(function (body) {
               var detail =
-                (body && body.detail) ||
+                (body && typeof body.detail === "string" && body.detail) ||
                 (resp.status >= 500
                   ? "O servidor está iniciando ou instável no momento. Aguarde alguns segundos e tente novamente."
                   : "Não foi possível completar a operação. Tente novamente.");
