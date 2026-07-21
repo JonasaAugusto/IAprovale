@@ -112,5 +112,37 @@ window.cfApi = (function () {
     lookupCep: function (cep) {
       return request("GET", "/cep/" + cep, { auth: true, timeoutMs: 15000 });
     },
+    pdf: function (results, query, extractedSummary) {
+      var token = null;
+      try {
+        token = sessionStorage.getItem("cf-token");
+      } catch (e) {
+      }
+      var headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = "Bearer " + token;
+
+      return fetch(BASE_URL + "/pdf", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({ results: results, query: query, extracted_summary: extractedSummary }),
+      }).then(function (resp) {
+        if (resp.status === 401) {
+          clearSessionAndRedirect();
+          throw { detail: "Sessão expirada." };
+        }
+        if (!resp.ok) {
+          return resp
+            .json()
+            .catch(function () {
+              return null;
+            })
+            .then(function (body) {
+              throw { detail: (body && body.detail) || "Não foi possível gerar o PDF." };
+            });
+        }
+        touchActivity();
+        return resp.blob();
+      });
+    },
   };
 })();
