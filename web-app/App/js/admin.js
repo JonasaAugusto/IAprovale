@@ -1,22 +1,12 @@
 "use strict";
 
 document.addEventListener("alpine:init", () => {
-  const ACTING_ADMIN_ID = 1;
-
-  const MOCK_USERS = [
-    { user_id: 1, username: "jonas", is_admin: true, is_active: true },
-    { user_id: 2, username: "Márcia Nogueira", is_admin: false, is_active: true },
-    { user_id: 3, username: "João Silva", is_admin: false, is_active: true },
-    { user_id: 4, username: "Ana Paula", is_admin: false, is_active: false },
-    { user_id: 5, username: "roberto", is_admin: false, is_active: true },
-  ];
-
-  const MOCK_PASSWORD = "Xk7-Trovao-42Q";
-
   Alpine.data("adminTab", () => ({
-    users: MOCK_USERS.map((u) => ({ ...u })),
+    users: [],
     filtro: "",
     erro: "",
+    carregando: false,
+    adicionando: false,
 
     novoUsername: "",
     novoIsAdmin: false,
@@ -39,6 +29,31 @@ document.addEventListener("alpine:init", () => {
     confirmAction: null,
 
     _modalTrigger: null,
+    _actingAdminId: "",
+
+    async init() {
+      try {
+        const user = JSON.parse(sessionStorage.getItem("cf-user"));
+        this._actingAdminId = (user && user.user_id) || "";
+      } catch (e) {
+      }
+      this.carregando = true;
+      try {
+        this.users = await window.cfApi.listUsers();
+      } catch (err) {
+        this.erro = (err && err.detail) || "Não foi possível carregar os usuários.";
+      } finally {
+        this.carregando = false;
+      }
+    },
+
+    async carregarUsuarios() {
+      try {
+        this.users = await window.cfApi.listUsers();
+      } catch (err) {
+        this.mostrarErro((err && err.detail) || "Não foi possível atualizar a lista de usuários.");
+      }
+    },
 
     _registrarTrigger() {
       const el = document.activeElement;
@@ -69,7 +84,7 @@ document.addEventListener("alpine:init", () => {
     },
 
     isSelf(u) {
-      return u.user_id === ACTING_ADMIN_ID;
+      return !!this._actingAdminId && u.user_id === this._actingAdminId;
     },
 
     podeDesativar(u) {
@@ -84,22 +99,26 @@ document.addEventListener("alpine:init", () => {
       this.erro = "";
     },
 
-    adicionar() {
+    async adicionar() {
       const username = this.novoUsername.trim();
       if (!username) {
         this.mostrarErro("Informe um nome de usuário.");
         return;
       }
       this.limparErro();
-      this.users.push({
-        user_id: Date.now(),
-        username,
-        is_admin: this.novoIsAdmin,
-        is_active: true,
-      });
-      this.novoUsername = "";
-      this.novoIsAdmin = false;
-      this._revelarSenha(username, MOCK_PASSWORD);
+      if (this.adicionando) return;
+      this.adicionando = true;
+      try {
+        const resp = await window.cfApi.createUser(username, this.novoIsAdmin);
+        this.novoUsername = "";
+        this.novoIsAdmin = false;
+        this._revelarSenha(resp.username, resp.generated_password);
+        await this.carregarUsuarios();
+      } catch (err) {
+        this.mostrarErro((err && err.detail) || "Não foi possível criar o usuário.");
+      } finally {
+        this.adicionando = false;
+      }
     },
 
     _revelarSenha(username, senha) {
@@ -133,15 +152,20 @@ document.addEventListener("alpine:init", () => {
       this._aoAbrirModal("rename-dialog");
     },
 
-    confirmarRenomear() {
+    async confirmarRenomear() {
       const novo = this.renameValue.trim();
       if (!novo) {
         this.renameErro = "Informe um nome de usuário.";
         return;
       }
-      this.renameUser.username = novo;
-      this.renameOpen = false;
-      this._aoFecharModal();
+      try {
+        await window.cfApi.renameUser(this.renameUser.user_id, novo);
+        this.renameOpen = false;
+        this._aoFecharModal();
+        await this.carregarUsuarios();
+      } catch (err) {
+        this.renameErro = (err && err.detail) || "Não foi possível renomear.";
+      }
     },
 
     cancelarRenomear() {
@@ -156,7 +180,15 @@ document.addEventListener("alpine:init", () => {
         `Uma nova senha será gerada para ${u.username} e a senha atual deixará de funcionar. Deseja continuar?`,
         "Gerar nova senha",
         false,
-        () => this._revelarSenha(u.username, MOCK_PASSWORD)
+        async () => {
+          try {
+            const resp = await window.cfApi.resetPassword(u.user_id);
+            this._revelarSenha(u.username, resp.generated_password);
+            await this.carregarUsuarios();
+          } catch (err) {
+            this.mostrarErro((err && err.detail) || "Não foi possível gerar nova senha.");
+          }
+        }
       );
     },
 
@@ -170,8 +202,13 @@ document.addEventListener("alpine:init", () => {
         `Tem certeza que deseja desativar ${u.username}? O acesso será revogado imediatamente e a sessão ativa dele será encerrada.`,
         "Desativar",
         true,
-        () => {
-          u.is_active = false;
+        async () => {
+          try {
+            await window.cfApi.deactivateUser(u.user_id);
+            await this.carregarUsuarios();
+          } catch (err) {
+            this.mostrarErro((err && err.detail) || "Não foi possível desativar o usuário.");
+          }
         }
       );
     },
@@ -182,8 +219,13 @@ document.addEventListener("alpine:init", () => {
         `Tem certeza que deseja reativar ${u.username}? O acesso será restaurado e ele(a) poderá fazer login novamente com a senha atual (ou a última gerada em um reset).`,
         "Reativar",
         false,
-        () => {
-          u.is_active = true;
+        async () => {
+          try {
+            await window.cfApi.reactivateUser(u.user_id);
+            await this.carregarUsuarios();
+          } catch (err) {
+            this.mostrarErro((err && err.detail) || "Não foi possível reativar o usuário.");
+          }
         }
       );
     },
@@ -194,8 +236,13 @@ document.addEventListener("alpine:init", () => {
         `Esta ação é PERMANENTE e não pode ser desfeita. Excluir o usuário '${u.username}' e todo o seu histórico de buscas?`,
         "Excluir",
         true,
-        () => {
-          this.users = this.users.filter((x) => x.user_id !== u.user_id);
+        async () => {
+          try {
+            await window.cfApi.deleteUser(u.user_id);
+            await this.carregarUsuarios();
+          } catch (err) {
+            this.mostrarErro((err && err.detail) || "Não foi possível excluir o usuário.");
+          }
         }
       );
     },
