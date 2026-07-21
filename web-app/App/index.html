@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="css/perfil.css">
   <link rel="stylesheet" href="css/admin.css">
 </head>
-<body class="full-height app-body" x-data="appShell">
+<body class="full-height app-body" x-data="appShell" x-on:cf-perfil-salvo.window="select('busca')">
 
   <header class="app-header">
     <div class="container header-inner">
@@ -358,6 +358,8 @@
       </div>
 
       <div class="perfil-view">
+        <p class="perfil-cep-status" x-show="!!carregarErro" x-text="carregarErro"></p>
+
         <div class="perfil-intro">
           <h1 class="perfil-title">Perfil</h1>
           <p class="perfil-sub">Quanto mais completo, melhores são as buscas.</p>
@@ -425,6 +427,7 @@
             Data prevista de formação, usada para mostrar concursos que você poderá
             prestar quando se formar.
           </p>
+          <p class="perfil-cep-status" x-show="!!dataFuturaErro" x-text="dataFuturaErro"></p>
         </section>
 
         <section class="perfil-section">
@@ -478,15 +481,17 @@
             <input type="file" class="perfil-file-input" accept=".pdf,.txt" x-on:change="anexarCurriculo($event)" aria-label="Anexar currículo">
           </label>
           <p class="perfil-arquivo-nome" x-show="!!curriculoNomeArquivo" x-text="curriculoNomeArquivo"></p>
+          <p class="perfil-cep-status" x-show="!!curriculoStatus" x-text="curriculoStatus"></p>
           <div class="form-field">
             <textarea x-model="curriculoTexto" placeholder="Cole ou escreva seu currículo aqui..."></textarea>
           </div>
         </section>
 
         <div class="perfil-actions-row">
-          <button type="button" class="btn btn-primary" x-on:click="salvar()">Salvar</button>
+          <button type="button" class="btn btn-primary" x-bind:disabled="!!salvando" x-on:click="salvar()">Salvar</button>
           <button type="button" class="btn btn-ghost" x-on:click="voltarDoPerfil()">Voltar</button>
         </div>
+        <p class="perfil-cep-status" x-show="!!salvarErro" x-text="salvarErro"></p>
         <p class="perfil-salvo-feedback" x-show="!!salvoFeedback" x-transition x-text="'Perfil salvo.'"></p>
       </div>
     </section>

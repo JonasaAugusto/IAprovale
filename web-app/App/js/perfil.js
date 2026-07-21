@@ -129,10 +129,39 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
-    anexarCurriculo(event) {
+    async anexarCurriculo(event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
-      this.curriculoNomeArquivo = file.name;
+      const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+      this.curriculoStatus = "Extraindo texto...";
+      try {
+        let texto;
+        if (ext === ".txt") {
+          texto = await file.text();
+        } else if (ext === ".pdf") {
+          const buf = await file.arrayBuffer();
+          texto = await window.cfPdfJs.extrairTexto(buf);
+        } else {
+          this.curriculoStatus = "Formato não suportado. Envie um PDF ou um TXT.";
+          return;
+        }
+        texto = this._normalizarCurriculo(texto);
+        if (!texto) {
+          this.curriculoStatus = ext === ".pdf"
+            ? "Não encontrei texto nesse PDF (parece ser digitalizado/imagem). Cole o texto do currículo manualmente."
+            : "O arquivo está vazio.";
+          return;
+        }
+        this.curriculoTexto = texto;
+        this.curriculoNomeArquivo = file.name;
+        this.curriculoStatus = "";
+      } catch (e) {
+        this.curriculoStatus = "Não consegui ler esse arquivo. Tente outro ou cole o texto.";
+      }
+    },
+
+    _normalizarCurriculo(texto) {
+      return texto.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).join("\n").trim();
     },
 
     _mmaaaaParaIso(texto) {
