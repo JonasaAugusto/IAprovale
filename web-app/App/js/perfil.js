@@ -1,8 +1,6 @@
 "use strict";
 
 document.addEventListener("alpine:init", () => {
-  const PERFIL_MOCK_KEY = "cf-perfil-mock";
-
   const UFS = [
     "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
     "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
@@ -16,13 +14,7 @@ document.addEventListener("alpine:init", () => {
     { label: "Qualquer lugar", value: "qualquer" },
   ];
 
-  const MOCK_CEPS = {
-    "36301000": { cidade: "São João del-Rei", uf: "MG" },
-    "01310100": { cidade: "São Paulo", uf: "SP" },
-    "40010000": { cidade: "Salvador", uf: "BA" },
-    "60010000": { cidade: "Fortaleza", uf: "CE" },
-    "70040010": { cidade: "Brasília", uf: "DF" },
-  };
+  const MMAAAA_RE = /^(0[1-9]|1[0-2])\/(\d{4})$/;
 
   Alpine.data("perfilForm", () => ({
     ufs: UFS,
@@ -54,13 +46,28 @@ document.addEventListener("alpine:init", () => {
 
     curriculoNomeArquivo: "",
     curriculoTexto: "",
+    curriculoStatus: "",
 
     salvoFeedback: false,
 
+    carregando: false,
+    salvando: false,
+    carregarErro: "",
+    salvarErro: "",
+    dataFuturaErro: "",
+
     _adjusting: false,
 
-    init() {
-      this.$nextTick(() => this._rehidratar());
+    async init() {
+      this.carregando = true;
+      try {
+        const perfil = await window.cfApi.getProfile();
+        this._deBackend(perfil);
+      } catch (err) {
+        this.carregarErro = (err && err.detail) || "Não foi possível carregar o perfil.";
+      } finally {
+        this.carregando = false;
+      }
     },
 
     onNivelToggled(nivel) {
@@ -105,19 +112,20 @@ document.addEventListener("alpine:init", () => {
       event.target.value = this.dataFutura;
     },
 
-    buscarCep() {
+    async buscarCep() {
       const digitos = (this.cep.match(/\d/g) || []).join("");
       if (digitos.length !== 8) {
         this.cepStatus = "Informe um CEP com 8 dígitos.";
         return;
       }
-      const achado = MOCK_CEPS[digitos];
-      if (achado) {
-        this.cidade = achado.cidade;
-        this.uf = achado.uf;
+      this.cepStatus = "Buscando CEP...";
+      try {
+        const data = await window.cfApi.lookupCep(digitos);
+        this.cidade = data.cidade || this.cidade;
+        this.uf = data.uf || this.uf;
         this.cepStatus = "";
-      } else {
-        this.cepStatus = "CEP não encontrado (mock).";
+      } catch (err) {
+        this.cepStatus = (err && err.detail) || "Não foi possível consultar o CEP.";
       }
     },
 
@@ -127,53 +135,88 @@ document.addEventListener("alpine:init", () => {
       this.curriculoNomeArquivo = file.name;
     },
 
-    _coletar() {
+    _mmaaaaParaIso(texto) {
+      const t = (texto || "").trim();
+      if (!t) return null;
+      const m = MMAAAA_RE.exec(t);
+      if (!m) {
+        throw new Error("Data de formação inválida. Use MM/AAAA, por exemplo 12/2027.");
+      }
+      return `${m[2]}-${m[1]}`;
+    },
+
+    _isoParaMmaaaa(iso) {
+      if (!iso || iso.length !== 7 || iso[4] !== "-") return "";
+      return `${iso.slice(5)}/${iso.slice(0, 4)}`;
+    },
+
+    _paraBackend() {
       return {
-        niveis: { ...this.niveis },
-        cursos: { ...this.cursos },
-        formacaoFutura: this.formacaoFutura,
-        dataFutura: this.dataFutura,
-        cep: this.cep,
-        cidade: this.cidade,
-        uf: this.uf,
-        mobilidade: this.mobilidade,
-        areasInteresse: this.areasInteresse,
-        curriculoNomeArquivo: this.curriculoNomeArquivo,
-        curriculoTexto: this.curriculoTexto,
+        graduacao: this.niveis.superior ? (this.cursos.superior || null) : null,
+        tecnico: this.niveis.tecnico ? (this.cursos.tecnico || null) : null,
+        pos_graduacao: this.niveis.pos ? (this.cursos.pos || null) : null,
+        escolaridade: ["fundamental", "medio", "tecnico", "superior", "pos"]
+          .filter((n) => this.niveis[n]).join(",") || null,
+        formacao_futura: this.formacaoFutura || null,
+        data_formacao_futura: this._mmaaaaParaIso(this.dataFutura),
+        cep: this.cep || null,
+        uf: this.uf || null,
+        cidade: this.cidade || null,
+        mobilidade: this.mobilidade || null,
+        areas_interesse: this.areasInteresse || null,
+        curriculo: this.curriculoTexto || null,
       };
     },
 
-    _rehidratar() {
-      let salvo = null;
-      try {
-        const raw = localStorage.getItem(PERFIL_MOCK_KEY);
-        if (raw) salvo = JSON.parse(raw);
-      } catch (e) {
-        salvo = null;
-      }
-      if (!salvo) return;
-      this.niveis = { ...this.niveis, ...(salvo.niveis || {}) };
-      this.cursos = { ...this.cursos, ...(salvo.cursos || {}) };
-      this.formacaoFutura = salvo.formacaoFutura || "";
-      this.dataFutura = salvo.dataFutura || "";
-      this.cep = salvo.cep || "";
-      this.cidade = salvo.cidade || "";
-      this.uf = salvo.uf || "";
-      this.mobilidade = salvo.mobilidade || "";
-      this.areasInteresse = salvo.areasInteresse || "";
-      this.curriculoNomeArquivo = salvo.curriculoNomeArquivo || "";
-      this.curriculoTexto = salvo.curriculoTexto || "";
+    _deBackend(perfil) {
+      const niveis = new Set((perfil.escolaridade || "").split(",").map((s) => s.trim()).filter(Boolean));
+      this.niveis = {
+        fundamental: niveis.has("fundamental"),
+        medio: niveis.has("medio"),
+        tecnico: niveis.has("tecnico"),
+        superior: niveis.has("superior"),
+        pos: niveis.has("pos"),
+      };
+      this.cursos = {
+        tecnico: perfil.tecnico || "",
+        superior: perfil.graduacao || "",
+        pos: perfil.pos_graduacao || "",
+      };
+      this.formacaoFutura = perfil.formacao_futura || "";
+      this.dataFutura = this._isoParaMmaaaa(perfil.data_formacao_futura);
+      this.cep = perfil.cep || "";
+      this.cidade = perfil.cidade || "";
+      this.uf = perfil.uf || "";
+      this.mobilidade = perfil.mobilidade || "";
+      this.areasInteresse = perfil.areas_interesse || "";
+      this.curriculoTexto = perfil.curriculo || "";
+      this.curriculoNomeArquivo = this.curriculoTexto ? "Currículo salvo" : "";
     },
 
-    salvar() {
+    async salvar() {
+      this.dataFuturaErro = "";
+      this.salvarErro = "";
+      let payload;
       try {
-        localStorage.setItem(PERFIL_MOCK_KEY, JSON.stringify(this._coletar()));
+        payload = this._paraBackend();
       } catch (e) {
+        this.dataFuturaErro = e.message;
+        return;
       }
-      this.salvoFeedback = true;
-      setTimeout(() => {
-        this.salvoFeedback = false;
-      }, 2000);
+      this.salvando = true;
+      try {
+        const salvo = await window.cfApi.updateProfile(payload);
+        this._deBackend(salvo);
+        this.salvoFeedback = true;
+        setTimeout(() => {
+          this.salvoFeedback = false;
+          window.dispatchEvent(new CustomEvent("cf-perfil-salvo"));
+        }, 1200);
+      } catch (err) {
+        this.salvarErro = (err && err.detail) || "Não foi possível salvar o perfil. Tente novamente.";
+      } finally {
+        this.salvando = false;
+      }
     },
   }));
 });
