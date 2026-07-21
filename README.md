@@ -38,6 +38,8 @@ O backend (FastAPI) vive em um repositório privado separado e é deployado no R
 
 Os dois apps são clientes do **mesmo backend**: mesma conta, mesmo perfil, mesma busca. Tudo nesta seção vale simultaneamente para desktop e web.
 
+Antes de cada release, o checklist em [PARIDADE.md](PARIDADE.md) é conferido pra garantir que toda mudança saiu igual nos dois clientes.
+
 ### Backend (repositório privado)
 
 API REST assíncrona em **FastAPI + Uvicorn**, organizada em módulos independentes:
