@@ -84,6 +84,7 @@
       <button
         type="button"
         class="app-tab"
+        x-show="isAdmin"
         x-bind:class="{'is-active': tab === 'admin'}"
         x-on:click="select('admin')"
         x-bind:aria-selected="tab === 'admin' ? 'true' : 'false'"
@@ -202,7 +203,7 @@
       </div>
     </section>
 
-    <section id="panel-admin" x-cloak x-show="tab === 'admin'" x-data="adminTab" role="tabpanel" aria-label="Admin">
+    <section id="panel-admin" x-cloak x-show="tab === 'admin' && isAdmin" x-data="adminTab" role="tabpanel" aria-label="Admin">
       <p class="admin-erro" x-show="!!erro" x-text="erro"></p>
 
       <div class="admin-add-row">

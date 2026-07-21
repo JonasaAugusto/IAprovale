@@ -69,6 +69,19 @@ document.addEventListener("alpine:init", () => {
     tab: "busca",
     perfilOpen: false,
     _perfilTrigger: null,
+    isAdmin: false,
+    currentUsername: "",
+
+    init() {
+      try {
+        const user = JSON.parse(sessionStorage.getItem("cf-user"));
+        this.isAdmin = !!(user && user.is_admin);
+        this.currentUsername = (user && user.username) || "";
+      } catch (e) {
+        this.isAdmin = false;
+        this.currentUsername = "";
+      }
+    },
 
     select(t) {
       this.tab = t;
