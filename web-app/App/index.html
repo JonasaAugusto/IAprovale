@@ -360,7 +360,7 @@
     >
       <div id="perfil-dialog" class="modal-dialog perfil-dialog" role="dialog" aria-modal="true" aria-labelledby="perfil-title" tabindex="-1">
         <div class="modal-header">
-          <h2 id="perfil-title">Perfil</h2>
+          <h2 id="perfil-title" x-text="currentUsername ? ('Perfil - ' + currentUsername) : 'Perfil'">Perfil</h2>
           <button type="button" class="modal-close" x-on:click="fecharPerfil()" aria-label="Fechar">×</button>
         </div>
         <div class="modal-body perfil-view">
