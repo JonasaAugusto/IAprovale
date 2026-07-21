@@ -112,6 +112,33 @@ window.cfApi = (function () {
     lookupCep: function (cep) {
       return request("GET", "/cep/" + cep, { auth: true, timeoutMs: 15000 });
     },
+    listUsers: function () {
+      return request("GET", "/auth/users", { auth: true });
+    },
+    createUser: function (username, isAdmin) {
+      return request("POST", "/auth/users", {
+        json: { username: username, is_admin: !!isAdmin },
+        auth: true,
+      });
+    },
+    renameUser: function (userId, newUsername) {
+      return request("PATCH", "/auth/users/" + userId + "/username", {
+        json: { username: newUsername },
+        auth: true,
+      });
+    },
+    resetPassword: function (userId) {
+      return request("POST", "/auth/users/" + userId + "/reset-password", { auth: true });
+    },
+    deactivateUser: function (userId) {
+      return request("PATCH", "/auth/users/" + userId + "/deactivate", { auth: true });
+    },
+    reactivateUser: function (userId) {
+      return request("PATCH", "/auth/users/" + userId + "/reactivate", { auth: true });
+    },
+    deleteUser: function (userId) {
+      return request("DELETE", "/auth/users/" + userId, { auth: true });
+    },
     pdf: function (results, query, extractedSummary) {
       var token = null;
       try {
