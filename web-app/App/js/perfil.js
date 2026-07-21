@@ -148,7 +148,7 @@ document.addEventListener("alpine:init", () => {
         texto = this._normalizarCurriculo(texto);
         if (!texto) {
           this.curriculoStatus = ext === ".pdf"
-            ? "Não encontrei texto nesse PDF (parece ser digitalizado/imagem). Cole o texto do currículo manualmente."
+            ? "Não encontrei texto nesse PDF (parece ser digitalizado/imagem). Tente outro arquivo ou converta para TXT."
             : "O arquivo está vazio.";
           return;
         }
@@ -156,7 +156,7 @@ document.addEventListener("alpine:init", () => {
         this.curriculoNomeArquivo = file.name;
         this.curriculoStatus = "";
       } catch (e) {
-        this.curriculoStatus = "Não consegui ler esse arquivo. Tente outro ou cole o texto.";
+        this.curriculoStatus = "Não consegui ler esse arquivo. Tente outro arquivo.";
       }
     },
 
