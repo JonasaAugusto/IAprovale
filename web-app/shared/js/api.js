@@ -106,5 +106,11 @@ window.cfApi = (function () {
         auth: true,
       });
     },
+    updateProfile: function (payload) {
+      return request("PUT", "/profile", { json: payload, auth: true });
+    },
+    lookupCep: function (cep) {
+      return request("GET", "/cep/" + cep, { auth: true, timeoutMs: 15000 });
+    },
   };
 })();
