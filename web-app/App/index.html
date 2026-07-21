@@ -124,7 +124,9 @@
           <span class="busca-switch-label">Usar meu currículo</span>
         </label>
 
-        <button type="button" class="btn btn-ghost busca-btn-pdf" disabled aria-disabled="true">Gerar PDF</button>
+        <button type="button" class="btn btn-ghost busca-btn-pdf" x-bind:disabled="results.length === 0 || gerandoPdf" x-on:click="gerarPdf()">Gerar PDF</button>
+        <button type="button" class="btn btn-ghost busca-btn-visualizar" x-show="pdfGerado" x-on:click="visualizarPdf()">Visualizar</button>
+        <span class="busca-pdf-feedback" x-show="!!pdfFeedback" x-transition x-text="pdfFeedback"></span>
       </div>
 
       <p class="busca-resultados-contador" x-show="!loading && results.length > 0" x-text="'Resultados: ' + results.length"></p>

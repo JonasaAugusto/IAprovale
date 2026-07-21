@@ -58,6 +58,11 @@ document.addEventListener("alpine:init", () => {
     emptyMessage: "",
     _PERFIL_QUERY: "concursos na minha área",
 
+    pdfBlob: null,
+    gerandoPdf: false,
+    pdfGerado: false,
+    pdfFeedback: "",
+
     _tutorialTrigger: null,
 
     init() {
@@ -95,6 +100,8 @@ document.addEventListener("alpine:init", () => {
       this.erro = "";
       this.isEmpty = false;
       this.loading = true;
+      this.pdfGerado = false;
+      this.pdfBlob = null;
       try {
         const resp = await window.cfApi.search(query, this.usarCurriculo);
         this.results = resp.results || [];
@@ -105,6 +112,38 @@ document.addEventListener("alpine:init", () => {
       } finally {
         this.loading = false;
       }
+    },
+
+    async gerarPdf() {
+      this.erro = "";
+      this.gerandoPdf = true;
+      try {
+        const blob = await window.cfApi.pdf(this.results, this.query, this.emptyMessage);
+        this.pdfBlob = blob;
+        this.pdfGerado = true;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "concursos.pdf";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        this.pdfFeedback = "PDF gerado com sucesso.";
+        setTimeout(() => {
+          this.pdfFeedback = "";
+        }, 3000);
+      } catch (err) {
+        this.erro = (err && err.detail) || "Não foi possível gerar o PDF. Tente novamente.";
+      } finally {
+        this.gerandoPdf = false;
+      }
+    },
+
+    visualizarPdf() {
+      if (!this.pdfBlob) return;
+      const url = URL.createObjectURL(this.pdfBlob);
+      window.open(url, "_blank");
     },
 
     prazoBR(iso) {
