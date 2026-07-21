@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="css/perfil.css">
   <link rel="stylesheet" href="css/admin.css">
 </head>
-<body class="full-height app-body" x-data="appShell" x-on:cf-perfil-salvo.window="select('busca')">
+<body class="full-height app-body" x-data="appShell" x-on:cf-perfil-salvo.window="handlePerfilSalvo()">
 
   <header class="app-header">
     <div class="container header-inner">
@@ -50,7 +50,7 @@
       </a>
 
       <div class="app-header-actions">
-        <button class="btn btn-ghost app-header-btn" type="button" x-on:click="openPerfil()">Perfil</button>
+        <button class="btn btn-ghost app-header-btn" type="button" x-on:click="abrirPerfil()">Perfil</button>
         <button class="btn btn-ghost app-header-btn" type="button" x-on:click="sair()">Sair</button>
 
         <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Alternar tema claro/escuro">
@@ -72,7 +72,7 @@
       </div>
     </div>
 
-    <nav class="app-tabbar container" x-show="tab !== 'perfil'" aria-label="Navegação do app">
+    <nav class="app-tabbar container" aria-label="Navegação do app">
       <button
         type="button"
         class="app-tab"
@@ -347,154 +347,154 @@
       </div>
     </section>
 
-    <section id="panel-perfil" x-cloak x-show="tab === 'perfil'" x-data="perfilForm" role="tabpanel" aria-label="Perfil">
-      <div class="perfil-topbar">
-        <button type="button" class="btn btn-ghost perfil-voltar-btn" x-on:click="voltarDoPerfil()">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M15 18l-6-6 6-6"></path>
-          </svg>
-          Voltar
-        </button>
-      </div>
-
-      <div class="perfil-view">
-        <p class="perfil-cep-status" x-show="!!carregarErro" x-text="carregarErro"></p>
-
-        <div class="perfil-intro">
-          <h1 class="perfil-title">Perfil</h1>
-          <p class="perfil-sub">Quanto mais completo, melhores são as buscas.</p>
-          <p class="perfil-nota">
-            Após preencher, na busca escreva só o que quer mudar: localização, cargo,
-            região ou órgão. O resto a IA usa do seu perfil.
-          </p>
+    <div
+      class="modal-backdrop"
+      x-cloak
+      x-show="perfilOpen"
+      x-data="perfilForm"
+      x-on:click.self="fecharPerfil()"
+      x-on:keydown.escape.window="fecharPerfil()"
+    >
+      <div id="perfil-dialog" class="modal-dialog perfil-dialog" role="dialog" aria-modal="true" aria-labelledby="perfil-title" tabindex="-1">
+        <div class="modal-header">
+          <h2 id="perfil-title">Perfil</h2>
+          <button type="button" class="modal-close" x-on:click="fecharPerfil()" aria-label="Fechar">×</button>
         </div>
+        <div class="modal-body perfil-view">
+          <p class="perfil-cep-status" x-show="!!carregarErro" x-text="carregarErro"></p>
 
-        <section class="perfil-section">
-          <h2 class="perfil-section-title">Formação</h2>
-
-          <label class="perfil-check">
-            <input type="checkbox" x-model="niveis.fundamental" x-on:change="onNivelToggled('fundamental')">
-            Ensino Fundamental
-          </label>
-
-          <label class="perfil-check">
-            <input type="checkbox" x-model="niveis.medio" x-on:change="onNivelToggled('medio')">
-            Ensino Médio
-          </label>
-
-          <label class="perfil-check">
-            <input type="checkbox" x-model="niveis.tecnico" x-on:change="onNivelToggled('tecnico')">
-            Técnico
-          </label>
-          <div class="form-field perfil-curso-field" x-show="!!niveis.tecnico" x-transition>
-            <input type="text" x-model="cursos.tecnico" x-bind:disabled="!niveis.tecnico" placeholder="Qual? (ex: Enfermagem)">
+          <div class="perfil-intro">
+            <p class="perfil-sub">Quanto mais completo, melhores são as buscas.</p>
+            <p class="perfil-nota">
+              Após preencher, na busca escreva só o que quer mudar: localização, cargo,
+              região ou órgão. O resto a IA usa do seu perfil.
+            </p>
           </div>
 
-          <label class="perfil-check">
-            <input type="checkbox" x-model="niveis.superior" x-on:change="onNivelToggled('superior')">
-            Graduação (Superior)
-          </label>
-          <div class="form-field perfil-curso-field" x-show="!!niveis.superior" x-transition>
-            <input type="text" x-model="cursos.superior" x-bind:disabled="!niveis.superior" placeholder="Qual? (ex: Enfermagem)">
-          </div>
+          <section class="perfil-section">
+            <h2 class="perfil-section-title">Formação</h2>
 
-          <label class="perfil-check">
-            <input type="checkbox" x-model="niveis.pos" x-on:change="onNivelToggled('pos')">
-            Pós-graduação
-          </label>
-          <div class="form-field perfil-curso-field" x-show="!!niveis.pos" x-transition>
-            <input type="text" x-model="cursos.pos" x-bind:disabled="!niveis.pos" placeholder="Qual? (ex: Enfermagem)">
-          </div>
-        </section>
+            <label class="perfil-check">
+              <input type="checkbox" x-model="niveis.fundamental" x-on:change="onNivelToggled('fundamental')">
+              Ensino Fundamental
+            </label>
 
-        <section class="perfil-section">
-          <h2 class="perfil-section-title">Formação futura ou em andamento</h2>
-          <div class="form-field">
-            <input type="text" x-model="formacaoFutura" placeholder="ex: Mestrado em Saúde Coletiva">
-          </div>
-          <div class="form-field">
-            <input
-              type="text"
-              x-bind:value="dataFutura"
-              x-on:input="maskData($event)"
-              placeholder="MM/AAAA"
-              inputmode="numeric"
-              maxlength="7"
-              aria-label="Data prevista de formação (MM/AAAA)"
-            >
-          </div>
-          <p class="perfil-hint">
-            Data prevista de formação, usada para mostrar concursos que você poderá
-            prestar quando se formar.
-          </p>
-          <p class="perfil-cep-status" x-show="!!dataFuturaErro" x-text="dataFuturaErro"></p>
-        </section>
+            <label class="perfil-check">
+              <input type="checkbox" x-model="niveis.medio" x-on:change="onNivelToggled('medio')">
+              Ensino Médio
+            </label>
 
-        <section class="perfil-section">
-          <h2 class="perfil-section-title">Localização</h2>
-          <div class="perfil-cep-row">
-            <input type="text" class="perfil-cep-input" x-model="cep" x-on:change="buscarCep()" placeholder="CEP" maxlength="9" aria-label="CEP">
-            <button type="button" class="btn btn-ghost" x-on:click="buscarCep()">Buscar</button>
-          </div>
-          <p class="perfil-cep-status" x-show="!!cepStatus" x-text="cepStatus"></p>
-          <div class="form-field">
-            <input type="text" x-model="cidade" placeholder="Cidade">
-          </div>
-          <div class="form-field">
-            <select x-model="uf" aria-label="UF">
-              <option value="">UF</option>
-              <template x-for="opt in ufs" x-bind:key="opt">
-                <option x-bind:value="opt" x-text="opt"></option>
-              </template>
-            </select>
-          </div>
-        </section>
+            <label class="perfil-check">
+              <input type="checkbox" x-model="niveis.tecnico" x-on:change="onNivelToggled('tecnico')">
+              Técnico
+            </label>
+            <div class="form-field perfil-curso-field" x-show="!!niveis.tecnico" x-transition>
+              <input type="text" x-model="cursos.tecnico" x-bind:disabled="!niveis.tecnico" placeholder="Qual? (ex: Enfermagem)">
+            </div>
 
-        <section class="perfil-section">
-          <h2 class="perfil-section-title">Disposição para mudar</h2>
-          <div class="form-field">
-            <select x-model="mobilidade" aria-label="Disposição para mudar">
-              <template x-for="opt in mobilidadeOptions" x-bind:key="opt.label">
-                <option x-bind:value="opt.value" x-text="opt.label"></option>
-              </template>
-            </select>
-          </div>
-          <p class="perfil-nota">
-            Isto afeta a busca: com "Só na minha cidade" ou "No meu estado", quando você
-            não digitar um local na pesquisa, o app mostra concursos do seu estado. Com
-            "Qualquer lugar", busca no Brasil inteiro.
-          </p>
-        </section>
+            <label class="perfil-check">
+              <input type="checkbox" x-model="niveis.superior" x-on:change="onNivelToggled('superior')">
+              Graduação (Superior)
+            </label>
+            <div class="form-field perfil-curso-field" x-show="!!niveis.superior" x-transition>
+              <input type="text" x-model="cursos.superior" x-bind:disabled="!niveis.superior" placeholder="Qual? (ex: Enfermagem)">
+            </div>
 
-        <section class="perfil-section">
-          <h2 class="perfil-section-title">Áreas de interesse</h2>
-          <div class="form-field">
-            <input type="text" x-model="areasInteresse" placeholder="ex: saúde, educação">
-          </div>
-        </section>
+            <label class="perfil-check">
+              <input type="checkbox" x-model="niveis.pos" x-on:change="onNivelToggled('pos')">
+              Pós-graduação
+            </label>
+            <div class="form-field perfil-curso-field" x-show="!!niveis.pos" x-transition>
+              <input type="text" x-model="cursos.pos" x-bind:disabled="!niveis.pos" placeholder="Qual? (ex: Enfermagem)">
+            </div>
+          </section>
 
-        <section class="perfil-section">
-          <h2 class="perfil-section-title">Currículo</h2>
-          <p class="perfil-nota">Cole ou escreva abaixo, ou anexe um arquivo (PDF/TXT). Apenas um por conta.</p>
-          <label class="btn btn-ghost perfil-anexar-btn">
-            Anexar arquivo (PDF/TXT)
-            <input type="file" class="perfil-file-input" accept=".pdf,.txt" x-on:change="anexarCurriculo($event)" aria-label="Anexar currículo">
-          </label>
-          <p class="perfil-arquivo-nome" x-show="!!curriculoNomeArquivo" x-text="curriculoNomeArquivo"></p>
-          <p class="perfil-cep-status" x-show="!!curriculoStatus" x-text="curriculoStatus"></p>
-          <div class="form-field">
-            <textarea x-model="curriculoTexto" placeholder="Cole ou escreva seu currículo aqui..."></textarea>
-          </div>
-        </section>
+          <section class="perfil-section">
+            <h2 class="perfil-section-title">Formação futura ou em andamento</h2>
+            <div class="form-field">
+              <input type="text" x-model="formacaoFutura" placeholder="ex: Mestrado em Saúde Coletiva">
+            </div>
+            <div class="form-field">
+              <input
+                type="text"
+                x-bind:value="dataFutura"
+                x-on:input="maskData($event)"
+                placeholder="MM/AAAA"
+                inputmode="numeric"
+                maxlength="7"
+                aria-label="Data prevista de formação (MM/AAAA)"
+              >
+            </div>
+            <p class="perfil-hint">
+              Data prevista de formação, usada para mostrar concursos que você poderá
+              prestar quando se formar.
+            </p>
+            <p class="perfil-cep-status" x-show="!!dataFuturaErro" x-text="dataFuturaErro"></p>
+          </section>
 
-        <div class="perfil-actions-row">
-          <button type="button" class="btn btn-primary" x-bind:disabled="!!salvando" x-on:click="salvar()">Salvar</button>
-          <button type="button" class="btn btn-ghost" x-on:click="voltarDoPerfil()">Voltar</button>
+          <section class="perfil-section">
+            <h2 class="perfil-section-title">Localização</h2>
+            <div class="perfil-cep-row">
+              <input type="text" class="perfil-cep-input" x-model="cep" x-on:change="buscarCep()" placeholder="CEP" maxlength="9" aria-label="CEP">
+              <button type="button" class="btn btn-ghost" x-on:click="buscarCep()">Buscar</button>
+            </div>
+            <p class="perfil-cep-status" x-show="!!cepStatus" x-text="cepStatus"></p>
+            <div class="form-field">
+              <input type="text" x-model="cidade" placeholder="Cidade">
+            </div>
+            <div class="form-field">
+              <select x-model="uf" aria-label="UF">
+                <option value="">UF</option>
+                <template x-for="opt in ufs" x-bind:key="opt">
+                  <option x-bind:value="opt" x-text="opt"></option>
+                </template>
+              </select>
+            </div>
+          </section>
+
+          <section class="perfil-section">
+            <h2 class="perfil-section-title">Disposição para mudar</h2>
+            <div class="form-field">
+              <select x-model="mobilidade" aria-label="Disposição para mudar">
+                <template x-for="opt in mobilidadeOptions" x-bind:key="opt.label">
+                  <option x-bind:value="opt.value" x-text="opt.label"></option>
+                </template>
+              </select>
+            </div>
+            <p class="perfil-nota">
+              Isto afeta a busca: com "Só na minha cidade" ou "No meu estado", quando você
+              não digitar um local na pesquisa, o app mostra concursos do seu estado. Com
+              "Qualquer lugar", busca no Brasil inteiro.
+            </p>
+          </section>
+
+          <section class="perfil-section">
+            <h2 class="perfil-section-title">Áreas de interesse</h2>
+            <div class="form-field">
+              <input type="text" x-model="areasInteresse" placeholder="ex: saúde, educação">
+            </div>
+          </section>
+
+          <section class="perfil-section">
+            <h2 class="perfil-section-title">Currículo</h2>
+            <p class="perfil-nota">Anexe um arquivo (PDF ou TXT). Apenas um por conta.</p>
+            <label class="btn btn-ghost perfil-anexar-btn">
+              Anexar arquivo (PDF/TXT)
+              <input type="file" class="perfil-file-input" accept=".pdf,.txt" x-on:change="anexarCurriculo($event)" aria-label="Anexar currículo">
+            </label>
+            <p class="perfil-arquivo-nome" x-show="!!curriculoNomeArquivo" x-text="curriculoNomeArquivo"></p>
+            <p class="perfil-cep-status" x-show="!!curriculoStatus" x-text="curriculoStatus"></p>
+          </section>
+
+          <div class="perfil-actions-row">
+            <button type="button" class="btn btn-primary" x-bind:disabled="!!salvando" x-on:click="salvar()">Salvar</button>
+            <button type="button" class="btn btn-ghost" x-on:click="fecharPerfil()">Cancelar</button>
+          </div>
+          <p class="perfil-cep-status" x-show="!!salvarErro" x-text="salvarErro"></p>
+          <p class="perfil-salvo-feedback" x-show="!!salvoFeedback" x-transition x-text="'Perfil salvo.'"></p>
         </div>
-        <p class="perfil-cep-status" x-show="!!salvarErro" x-text="salvarErro"></p>
-        <p class="perfil-salvo-feedback" x-show="!!salvoFeedback" x-transition x-text="'Perfil salvo.'"></p>
       </div>
-    </section>
+    </div>
   </main>
 
   <script defer src="../shared/js/theme.js"></script>

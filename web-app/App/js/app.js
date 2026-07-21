@@ -62,21 +62,31 @@
 document.addEventListener("alpine:init", () => {
   Alpine.data("appShell", () => ({
     tab: "busca",
-    previousTab: "busca",
+    perfilOpen: false,
+    _perfilTrigger: null,
 
     select(t) {
       this.tab = t;
     },
 
-    openPerfil() {
-      if (this.tab !== "perfil") {
-        this.previousTab = this.tab;
-      }
-      this.tab = "perfil";
+    abrirPerfil() {
+      const el = document.activeElement;
+      this._perfilTrigger = el && typeof el.focus === "function" ? el : null;
+      this.perfilOpen = true;
+      this.$nextTick(() => window.cfModalAberto("perfil-dialog"));
     },
 
-    voltarDoPerfil() {
-      this.tab = this.previousTab;
+    fecharPerfil() {
+      if (!this.perfilOpen) return;
+      this.perfilOpen = false;
+      const trigger = this._perfilTrigger;
+      this._perfilTrigger = null;
+      this.$nextTick(() => window.cfModalFechado(trigger));
+    },
+
+    handlePerfilSalvo() {
+      this.select("busca");
+      this.fecharPerfil();
     },
 
     async sair() {
