@@ -123,6 +123,12 @@
   padding: 2.5rem 0;
 }
 
+.busca-resultados-contador {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.9rem;
+}
+
 .busca-results {
   display: grid;
   gap: 1rem;

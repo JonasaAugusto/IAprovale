@@ -126,6 +126,8 @@
         <button type="button" class="btn btn-ghost busca-btn-pdf" disabled aria-disabled="true">Gerar PDF</button>
       </div>
 
+      <p class="busca-resultados-contador" x-show="!loading && results.length > 0" x-text="'Resultados: ' + results.length"></p>
+
       <div class="busca-skeleton-list" x-show="!!loading" aria-hidden="true">
         <div class="concurso-card skeleton busca-skeleton-card"></div>
         <div class="concurso-card skeleton busca-skeleton-card"></div>
