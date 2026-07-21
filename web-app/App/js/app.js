@@ -4,6 +4,8 @@
   var FOCUSABLE =
     'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+  var cfModaisAbertos = 0;
+
   function cfVisivel(el) {
     return !!el && el.getClientRects().length > 0;
   }
@@ -18,6 +20,7 @@
   }
 
   window.cfModalAberto = function (dialogId) {
+    cfModaisAbertos++;
     document.body.classList.add("modal-open");
     var dialog = document.getElementById(dialogId);
     if (!cfVisivel(dialog)) return;
@@ -26,8 +29,10 @@
   };
 
   window.cfModalFechado = function (trigger) {
-    if (cfBackdropAberto()) return;
-    document.body.classList.remove("modal-open");
+    cfModaisAbertos = Math.max(0, cfModaisAbertos - 1);
+    if (cfModaisAbertos === 0) {
+      document.body.classList.remove("modal-open");
+    }
     if (cfVisivel(trigger) && typeof trigger.focus === "function") {
       trigger.focus({ preventScroll: true });
     }
