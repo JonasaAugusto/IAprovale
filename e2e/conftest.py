@@ -78,7 +78,13 @@ def disposable_admin_user(authenticated_page):
             ))
             row.get_by_role("button", name="Excluir").click()
             page.wait_for_selector("#confirm-dialog", state="visible")
-            page.click("#confirm-dialog .admin-modal-actions button.btn:not(.btn-ghost)")
+            # Escopado por texto (nao por classe CSS): quando
+            # confirmDestrutivo=true (excluir/desativar), admin.js
+            # (x-bind:class="confirmDestrutivo ? 'btn-ghost admin-action-destructive' : ...")
+            # faz o Alpine mesclar "btn-ghost" no PROPRIO botao de acao,
+            # deixando-o com a MESMA classe do botao Cancelar - portanto
+            # "button.btn:not(.btn-ghost)" nao selecionava nada nesse caso.
+            page.locator("#confirm-dialog").get_by_role("button", name="Excluir").click()
         except Exception:
             # Cleanup best-effort: uma asseracao falha no meio do teste nao
             # pode impedir a tentativa de limpeza dos demais usuarios criados.
