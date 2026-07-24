@@ -160,6 +160,7 @@ class MainWindow(QWidget):
             return
 
         box = MessageBox(_WEB_PROMO_TITLE, _WEB_PROMO_TEXT, self.window())
+        box.move(self.window().pos())
         box.yesButton.setText("Sim")
         box.cancelButton.setText("Prefiro continuar aqui")
         if box.exec():

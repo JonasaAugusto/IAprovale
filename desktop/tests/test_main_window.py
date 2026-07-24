@@ -195,6 +195,9 @@ def _make_fake_message_box(exec_returns: bool):
         def exec(self) -> bool:
             return exec_returns
 
+        def move(self, *args, **kwargs) -> None:
+            return None
+
     return _FakeMessageBox
 
 
