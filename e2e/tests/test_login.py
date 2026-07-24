@@ -23,7 +23,7 @@ BASE_URL = "https://jonasaaugusto.github.io/IAprovale"
 def test_login_valid_credentials_redirects_to_app(authenticated_page):
     page = authenticated_page
     assert "/App" in page.url
-    expect(page.locator("button:has-text('Perfil')")).to_be_visible()
+    expect(page.get_by_role("button", name="Perfil", exact=True)).to_be_visible()
 
 
 def test_login_invalid_credentials_shows_error(browser):
