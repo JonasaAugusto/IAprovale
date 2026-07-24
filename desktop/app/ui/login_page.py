@@ -32,6 +32,7 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     CardWidget,
+    HyperlinkButton,
     InfoBar,
     InfoBarPosition,
     LineEdit,
@@ -46,6 +47,8 @@ from app.ui import styles
 
 _ENTRAR_TEXT = "Entrar"
 _CONNECTING_TEXT = "Conectando ao servidor..."
+_WEB_URL = "https://jonasaaugusto.github.io/IAprovale/"
+_WEB_LINK_TEXT = "Ir para a web"
 
 _LOGO_PATH = Path(__file__).parent.parent / "assets" / "logo.png"
 
@@ -104,6 +107,10 @@ class LoginPage(QWidget):
         self._entrar_button = PrimaryPushButton(_ENTRAR_TEXT, card)
         self._entrar_button.clicked.connect(self._on_submit)
         card_layout.addWidget(self._entrar_button)
+
+        card_layout.addSpacing(styles.SPACING_SM)
+        self._web_link = HyperlinkButton(_WEB_URL, _WEB_LINK_TEXT, card)
+        card_layout.addWidget(self._web_link, alignment=Qt.AlignmentFlag.AlignCenter)
 
         outer.addWidget(card)
 
