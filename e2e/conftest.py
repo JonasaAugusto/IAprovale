@@ -1,8 +1,10 @@
 """Fixtures compartilhadas da suite E2E (Playwright + pytest) do IAprovale.
 
 A suite roda contra a producao real (GitHub Pages + Render), nao ha app
-first-party pra importar aqui — so stdlib (os, uuid) e pytest. As fixtures
-`browser`/`page`/`context` sao auto-injetadas pelo plugin pytest-playwright.
+first-party pra importar aqui. As fixtures `browser`/`page`/`context` sao
+auto-injetadas pelo plugin pytest-playwright. `e2e/.env` (se presente) e
+carregado automaticamente no import deste modulo via python-dotenv, antes
+de qualquer fixture ler os.environ.
 
 Nao ha try/except decorativo em volta do login: um `TimeoutError` do
 Playwright e o sinal natural de falha (ex.: cold start do Render, credenciais
@@ -11,8 +13,12 @@ erradas, selector mudou) — deixamos ele estourar.
 
 import os
 import uuid
+from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent / ".env")
 
 BASE_URL = "https://jonasaaugusto.github.io/IAprovale"
 
