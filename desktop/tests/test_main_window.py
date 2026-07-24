@@ -218,6 +218,7 @@ def test_popup_web_shown_when_flag_absent_and_writes_flag(qtbot, monkeypatch, tm
 
     window = MainWindow(_FakeSession(is_admin=False), **_base_window_kwargs())
     qtbot.addWidget(window)
+    qtbot.waitUntil(lambda: fake_cls.last_instance is not None, timeout=2000)
 
     assert fake_cls.last_instance is not None
     assert fake_cls.last_instance.title == "IAprovale na web!"
@@ -245,6 +246,7 @@ def test_popup_web_nao_mostra_quando_flag_presente(qtbot, monkeypatch, tmp_path)
 
     window = MainWindow(_FakeSession(is_admin=False), **_base_window_kwargs())
     qtbot.addWidget(window)
+    qtbot.wait(100)
 
     assert fake_cls.instances == []
 
@@ -269,6 +271,7 @@ def test_popup_web_sim_abre_url_via_qdesktopservices(qtbot, monkeypatch, tmp_pat
 
     window = MainWindow(_FakeSession(is_admin=False), **_base_window_kwargs())
     qtbot.addWidget(window)
+    qtbot.waitUntil(lambda: len(opened) == 1, timeout=2000)
 
     assert len(opened) == 1
     assert opened[0].toString() == "https://jonasaaugusto.github.io/IAprovale/"
@@ -298,5 +301,6 @@ def test_popup_web_io_failure_never_crasha(qtbot, monkeypatch, tmp_path):
     # Não deve levantar exceção.
     window = MainWindow(_FakeSession(is_admin=False), **_base_window_kwargs())
     qtbot.addWidget(window)
+    qtbot.waitUntil(lambda: fake_cls.last_instance is not None, timeout=2000)
 
     assert fake_cls.last_instance is not None  # leitura falhou -> trata como não-mostrado
