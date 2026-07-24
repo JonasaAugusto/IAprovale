@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import json
 
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
 from qfluentwidgets import (
@@ -138,7 +138,7 @@ class MainWindow(QWidget):
 
         # Popup de anúncio do app web (v1.5.2) — depois do update-check pra
         # não competir com a InfoBar dele; só na primeira construção.
-        self._mostrar_popup_web()
+        QTimer.singleShot(0, self._mostrar_popup_web)
 
     # --- Popup do app web (uma vez por instalação, v1.5.2) --------------
 
