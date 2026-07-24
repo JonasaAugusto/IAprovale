@@ -2,7 +2,7 @@
 
 Buscador de concursos públicos privado e por convite, com IA. O usuário descreve em linguagem natural o que procura (ex: *"concurso na área de saúde com graduação em enfermagem"*) e o sistema filtra automaticamente apenas os concursos com inscrições abertas que aceitam a formação informada, a pesquisa também é alimentada por um sistema de Formulário na aba de Perfil.
 
-**Versões:** desktop **v1.5.1** (Windows) · web app **v2.0 em desenvolvimento** (GitHub Pages)
+**Versões:** desktop **v1.5.2** (Windows) · web app **v2.0** (GitHub Pages) — funcionalidades completas, aguardando checkpoint final de E2E antes do release
 
 ## Sumário
 
@@ -23,13 +23,14 @@ Buscador de concursos públicos privado e por convite, com IA. O usuário descre
 2. A pessoa descreve o que procura em português natural, ou busca direto com o perfil salvo.
 3. O backend traduz a busca com IA, consulta a fonte oficial de concursos (MCP da PCI Concursos) e filtra pelos resultados com inscrições abertas compatíveis com a formação.
 4. Os resultados aparecem em cards com localização, cargos compatíveis e prazo. Concursos ainda não vistos ganham o badge **NOVO**; os já vistos continuam aparecendo sempre.
-5. No desktop, é possível gerar um PDF com o mesmo padrão visual dos cards.
+5. É possível gerar um PDF com o mesmo padrão visual dos cards, no desktop ou no navegador.
 
 ## Estrutura do repositório
 
 ```
 desktop/    Cliente desktop (Windows): login, busca, resultados, perfil e administração
 web-app/    Homepage institucional + web app (rotas /Login e /App)
+e2e/        Suíte Playwright (Python) de ponta-a-ponta contra o backend real
 ```
 
 O backend (FastAPI) vive em um repositório privado separado e é deployado no Render. Este repositório público contém apenas os clientes.
@@ -65,7 +66,7 @@ Tecnologias do backend: **DeepSeek** (via SDK OpenAI-compatível) para estrutura
 
 ## App Desktop (Windows)
 
-Cliente nativo empacotado em `.exe` standalone. É a versão completa e estável (v1.5.1).
+Cliente nativo empacotado em `.exe` standalone. É a versão completa e estável (v1.5.2).
 
 - **Python 3 + PySide6 (Qt 6)** com **PySide6-Fluent-Widgets**: visual Fluent Design, tema claro/escuro ao vivo.
 - **Exportação em PDF local** (fpdf2, 100% Python): mesmo padrão visual dos cards, com Visualizar / Salvar / Apagar.
@@ -73,20 +74,25 @@ Cliente nativo empacotado em `.exe` standalone. É a versão completa e estável
 - **Formação futura**: graduação em andamento com data de formatura conta como formação compatível quando o prazo do concurso alcança a data.
 - **Sessão persistida com auto-login** resiliente a quedas de rede.
 - **Auto-update nível 1**: o app avisa quando existe versão nova no GitHub (sem substituir o binário sozinho).
+- **Popup de divulgação do web app**: mostrado uma vez por instalação, convida a experimentar a versão web sem forçar a troca.
 - **UI nunca trava**: chamadas de rede rodam fora da thread da interface; buscas longas não congelam a janela.
 - **PyInstaller** para o executável, imports pesados carregados sob demanda para startup rápido.
 - Quase 200 testes automatizados cobrindo login, busca, perfil, PDF e admin.
 
 ## App Web (GitHub Pages)
 
-Web app em construção (milestone v2.0) que reusa o mesmo backend do desktop, acessível de qualquer navegador sem instalar nada.
+Web app (milestone v2.0) que reusa o mesmo backend do desktop, acessível de qualquer navegador sem instalar nada. Todas as funcionalidades principais já estão ligadas ao backend real — falta só o checkpoint final de testes ponta-a-ponta antes do release.
 
 - **Site 100% estático, sem build step**: HTML + CSS puro + JavaScript vanilla, publicado no GitHub Pages por workflow do GitHub Actions.
 - **Alpine.js (build CSP)** para reatividade das telas, carregado de CDN com verificação de integridade.
 - **Design system próprio** (tokens de cor/tipografia, tema claro/escuro persistente) com paridade visual ao desktop: verde no claro, dourado no escuro, fontes Inter/Fraunces.
-- **Rotas**: homepage institucional na raiz, `/Login` e `/App` (abas Busca, Admin e tela de Perfil).
+- **Rotas**: homepage institucional na raiz, `/Login` e `/App` (abas Busca e Admin, modal de Perfil).
 - **Sessão só no navegador**: o login vale para a aba atual e expira sozinho após um período de inatividade; fechar o navegador encerra a sessão. Sem "continuar logado" automático, por decisão de design.
-- **Estado atual**: login real contra o backend concluído; as telas de Busca, Perfil e Admin já existem com dados de demonstração e serão ligadas ao backend nas próximas fases (busca real, perfil real, PDF no navegador, admin real).
+- **Busca real** em linguagem natural, com os mesmos cards ricos e seguros do desktop (XSS-safe, nunca via HTML dinâmico).
+- **Perfil e currículo reais**: formulário completo com round-trip no backend; extração local de PDF/TXT direto no navegador (pdfjs-dist), sem custo de IA.
+- **Exportação em PDF no navegador**: baixa ou visualiza em nova aba, com o mesmo layout do PDF gerado no desktop.
+- **Administração real**: CRUD completo de usuários pela aba Admin, com a mesma paridade do desktop e reforço de autorização no servidor.
+- **Suíte Playwright de ponta-a-ponta** (`e2e/`) cobrindo login, busca, perfil, PDF e admin contra o backend real.
 
 ## Decisões de design
 
@@ -116,7 +122,7 @@ Postura em camadas, descrita em alto nível:
 - **Busca com perfil** em um clique, com a IA completando o contexto a partir da formação salva.
 - **Perfil completo**: escolaridade cumulativa, formações, mobilidade, formação futura e currículo.
 - **Resultados em cards**: título, localização (UF · região), cargos compatíveis em chips, prazo de inscrição, link da notícia com botão copiar e badge NOVO.
-- **Exportação em PDF** (desktop) com o mesmo padrão visual dos cards.
+- **Exportação em PDF** (desktop e web) com o mesmo padrão visual dos cards.
 - **Tema claro/escuro** com alternância ao vivo nos dois clientes.
 - **Tutorial embutido** ("Como pesquisar") idêntico no desktop e no web.
 - **Administração de usuários**: criar conta com senha forte gerada, copiar senha, renomear, reativar e excluir, com proteções contra o admin se trancar fora da própria conta.
@@ -138,6 +144,19 @@ python -m app.main
 O site publicado é montado pelo workflow em `.github/workflows/pages.yml`. Para pré-visualizar localmente, monte a mesma estrutura (homepage na raiz + `/Login` + `/App` + `/shared`) e sirva com qualquer servidor estático, por exemplo `python -m http.server`.
 
 Ambos os clientes se conectam a uma instância do backend (repositório privado).
+
+### Suíte E2E
+
+```bash
+cd e2e
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+pytest -m "not costly"   # subset barato: login, perfil, admin
+pytest                    # suíte completa, inclui busca real e PDF (custa tokens de IA)
+```
+
+Requer `.env` com credenciais de uma conta de teste dedicada — veja `e2e/.env.example` e `e2e/README.md`.
 
 ## Status e licença
 
