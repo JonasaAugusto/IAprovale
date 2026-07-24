@@ -47,7 +47,7 @@ from app.ui import styles
 
 _ENTRAR_TEXT = "Entrar"
 _CONNECTING_TEXT = "Conectando ao servidor..."
-_WEB_URL = "https://jonasaaugusto.github.io/IAprovale/"
+_WEB_URL = "https://jonasaaugusto.github.io/IAprovale/Login/"
 _WEB_LINK_TEXT = "Ir para a web"
 
 _LOGO_PATH = Path(__file__).parent.parent / "assets" / "logo.png"

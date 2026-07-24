@@ -127,4 +127,4 @@ def test_enter_in_password_field_submits(qtbot, page, captured):
 
 def test_web_link_present_with_correct_url_and_label(qtbot, page, captured):
     assert page._web_link.text() == "Ir para a web"
-    assert page._web_link.getUrl().toString() == "https://jonasaaugusto.github.io/IAprovale/"
+    assert page._web_link.getUrl().toString() == "https://jonasaaugusto.github.io/IAprovale/Login/"
