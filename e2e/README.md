@@ -54,6 +54,13 @@ hora):
 pytest -m "not costly" -v
 ```
 
+Esse subset barato tambem inclui `tests/test_busca_mock.py`: uma variante
+mockada e gratuita de `test_busca.py` que valida so a renderizacao dos
+cards de busca, interceptando a chamada `POST /search` com `page.route()`
+do Playwright e devolvendo um JSON fixo — rapida, sem tocar o backend real
+nem o pipeline do DeepSeek. Ela complementa (nao substitui) `test_busca.py`,
+que segue como gate `@costly` de fidelidade maxima pre-release.
+
 Suite completa (inclui busca e PDF, que exercitam o pipeline real do
 DeepSeek — reservado pra checagem pre-release, ver `PARIDADE.md` na raiz do
 repo):
