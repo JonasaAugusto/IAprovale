@@ -92,7 +92,7 @@ Web app (milestone v2.0) que reusa o mesmo backend do desktop, acessível de qua
 - **Perfil e currículo reais**: formulário completo com round-trip no backend; extração local de PDF/TXT direto no navegador (pdfjs-dist), sem custo de IA.
 - **Exportação em PDF no navegador**: baixa ou visualiza em nova aba, com o mesmo layout do PDF gerado no desktop.
 - **Administração real**: CRUD completo de usuários pela aba Admin, com a mesma paridade do desktop e reforço de autorização no servidor.
-- **Suíte Playwright de ponta-a-ponta** (`e2e/`) cobrindo login, busca, perfil, PDF e admin contra o backend real.
+- **Suíte Playwright de ponta-a-ponta** (`e2e/`) cobrindo login, busca, perfil, PDF e admin contra o backend real — separada por marker em subset barato (`-m "not costly"`: login, perfil, admin) e subset caro (`@pytest.mark.costly`: busca e PDF, os únicos que gastam tokens de IA de verdade), pra rodar o barato à vontade e reservar o caro pra checagem pré-release.
 
 ## Decisões de design
 
