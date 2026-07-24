@@ -123,3 +123,8 @@ def test_enter_in_password_field_submits(qtbot, page, captured):
     page._password_entry.returnPressed.emit()
 
     assert captured.calls == 1
+
+
+def test_web_link_present_with_correct_url_and_label(qtbot, page, captured):
+    assert page._web_link.text() == "Ir para a web"
+    assert str(page._web_link.getUrl()) == "https://jonasaaugusto.github.io/IAprovale/"
