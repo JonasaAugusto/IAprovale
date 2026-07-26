@@ -15,7 +15,6 @@ Tkinter analog's `test_main_frame.py`.
 
 import json
 from dataclasses import dataclass
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -175,32 +174,6 @@ def test_no_update_shows_no_infobar(qtbot, monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def _make_fake_message_box(exec_returns: bool):
-    """Test double para qfluentwidgets.MessageBox — evita o modal nativo
-    bloqueante (`.exec()`) em testes headless. `exec_returns` controla o
-    retorno de exec() (True == usuário clicou "Sim")."""
-
-    class _FakeMessageBox:
-        last_instance: "_FakeMessageBox | None" = None
-        instances: list["_FakeMessageBox"] = []
-
-        def __init__(self, title, content, parent=None) -> None:
-            self.title = title
-            self.content = content
-            self.yesButton = MagicMock()
-            self.cancelButton = MagicMock()
-            _FakeMessageBox.last_instance = self
-            _FakeMessageBox.instances.append(self)
-
-        def exec(self) -> bool:
-            return exec_returns
-
-        def move(self, *args, **kwargs) -> None:
-            return None
-
-    return _FakeMessageBox
-
-
 def _base_window_kwargs():
     return dict(on_logout=lambda: None, on_toggle_theme=lambda: None)
 
@@ -213,19 +186,24 @@ def test_popup_web_shown_when_flag_absent_and_writes_flag(qtbot, monkeypatch, tm
     monkeypatch.setattr(main_window_module, "run_in_background", lambda *a, **k: None)
     monkeypatch.setattr(main_window_module, "APP_DIR", tmp_path)
 
-    fake_cls = _make_fake_message_box(exec_returns=False)
-    monkeypatch.setattr(main_window_module, "MessageBox", fake_cls)
-
     window = MainWindow(_FakeSession(is_admin=False), **_base_window_kwargs())
     qtbot.addWidget(window)
-    qtbot.waitUntil(lambda: fake_cls.last_instance is not None, timeout=2000)
 
-    assert fake_cls.last_instance is not None
-    assert fake_cls.last_instance.title == "IAprovale na web!"
+    assert window._web_overlay is not None
+    overlay = window._web_overlay
+    assert overlay.title_label.text() == "IAprovale na web!"
+    assert overlay.body_label.text() == main_window_module._WEB_PROMO_TEXT
+    assert overlay.sim_button.text() == "Sim"
+    assert overlay.depois_button.text() == "Prefiro continuar aqui"
 
     flag_path = tmp_path / "web_promo.json"
+    assert not flag_path.exists()
+
+    overlay.depois_button.click()
+
     assert flag_path.exists()
     assert json.loads(flag_path.read_text(encoding="utf-8"))["shown"] is True
+    assert window._web_overlay is None
 
 
 def test_popup_web_nao_mostra_quando_flag_presente(qtbot, monkeypatch, tmp_path):
@@ -241,14 +219,10 @@ def test_popup_web_nao_mostra_quando_flag_presente(qtbot, monkeypatch, tmp_path)
         json.dumps({"shown": True}), encoding="utf-8"
     )
 
-    fake_cls = _make_fake_message_box(exec_returns=True)
-    monkeypatch.setattr(main_window_module, "MessageBox", fake_cls)
-
     window = MainWindow(_FakeSession(is_admin=False), **_base_window_kwargs())
     qtbot.addWidget(window)
-    qtbot.wait(100)
 
-    assert fake_cls.instances == []
+    assert window._web_overlay is None
 
 
 def test_popup_web_sim_abre_url_via_qdesktopservices(qtbot, monkeypatch, tmp_path):
@@ -259,9 +233,6 @@ def test_popup_web_sim_abre_url_via_qdesktopservices(qtbot, monkeypatch, tmp_pat
     monkeypatch.setattr(main_window_module, "run_in_background", lambda *a, **k: None)
     monkeypatch.setattr(main_window_module, "APP_DIR", tmp_path)
 
-    fake_cls = _make_fake_message_box(exec_returns=True)
-    monkeypatch.setattr(main_window_module, "MessageBox", fake_cls)
-
     opened = []
     monkeypatch.setattr(
         main_window_module.QDesktopServices,
@@ -271,10 +242,26 @@ def test_popup_web_sim_abre_url_via_qdesktopservices(qtbot, monkeypatch, tmp_pat
 
     window = MainWindow(_FakeSession(is_admin=False), **_base_window_kwargs())
     qtbot.addWidget(window)
-    qtbot.waitUntil(lambda: len(opened) == 1, timeout=2000)
+
+    assert window._web_overlay is not None
+    window._web_overlay.sim_button.click()
 
     assert len(opened) == 1
     assert opened[0].toString() == "https://jonasaaugusto.github.io/IAprovale/"
+    assert window._web_overlay is None
+
+    # Segundo MainWindow, com APP_DIR limpo (flag ainda não escrita nesta
+    # sub-pasta) — clicar em "depois" NÃO deve chamar openUrl.
+    tmp_path_2 = tmp_path / "segunda_janela"
+    monkeypatch.setattr(main_window_module, "APP_DIR", tmp_path_2)
+
+    window2 = MainWindow(_FakeSession(is_admin=False), **_base_window_kwargs())
+    qtbot.addWidget(window2)
+
+    assert window2._web_overlay is not None
+    window2._web_overlay.depois_button.click()
+
+    assert len(opened) == 1  # inalterado
 
 
 def test_popup_web_io_failure_never_crasha(qtbot, monkeypatch, tmp_path):
@@ -289,18 +276,19 @@ def test_popup_web_io_failure_never_crasha(qtbot, monkeypatch, tmp_path):
     blocked = tmp_path / "not_a_dir"
     blocked.write_text("x", encoding="utf-8")
     monkeypatch.setattr(main_window_module, "APP_DIR", blocked)
-
-    fake_cls = _make_fake_message_box(exec_returns=True)
-    monkeypatch.setattr(main_window_module, "MessageBox", fake_cls)
     monkeypatch.setattr(
         main_window_module.QDesktopServices,
         "openUrl",
         staticmethod(lambda url: None),
     )
 
-    # Não deve levantar exceção.
+    # Não deve levantar exceção na construção (leitura falha -> "não mostrado").
     window = MainWindow(_FakeSession(is_admin=False), **_base_window_kwargs())
     qtbot.addWidget(window)
-    qtbot.waitUntil(lambda: fake_cls.last_instance is not None, timeout=2000)
 
-    assert fake_cls.last_instance is not None  # leitura falhou -> trata como não-mostrado
+    assert window._web_overlay is not None  # leitura falhou -> trata como não-mostrado
+
+    # Clicar num botão também não deve levantar exceção (escrita falha em silêncio).
+    window._web_overlay.sim_button.click()
+
+    assert window._web_overlay is None
