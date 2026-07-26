@@ -22,16 +22,19 @@ from __future__ import annotations
 
 import json
 
-from PySide6.QtCore import QTimer, QUrl
+from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
 from qfluentwidgets import (
+    BodyLabel,
+    CardWidget,
     FluentIcon as FIF,
     InfoBar,
     InfoBarPosition,
-    MessageBox,
     Pivot,
+    PrimaryPushButton,
     PushButton,
+    TitleLabel,
     TransparentToolButton,
 )
 
@@ -58,6 +61,96 @@ _WEB_PROMO_TEXT = (
 )
 
 
+class _WebPromoOverlay(QWidget):
+    """Overlay embutido (filho de `MainWindow`) para o popup de anúncio da
+    versão web (v1.5.2/260724-so6).
+
+    Deliberadamente um `QWidget` filho em coordenadas locais — NUNCA um
+    `QDialog`/janela top-level. Os fixes anteriores 260724-m4k
+    (`box.move(self.window().pos())`) e 260724-mo5
+    (`QTimer.singleShot(0, ...)`) tentaram sincronizar um
+    `qfluentwidgets.MessageBox` (que herda de `MaskDialogBase`, sempre uma
+    janela top-level `FramelessWindowHint` do SO) contra a janela pai usando
+    coordenadas ABSOLUTAS de tela — e produziram geometria matematicamente
+    correta em repro offscreen, mas o popup continuou renderizando pequeno,
+    deslocado e cortado na máquina real do usuário (DPI scaling, timing do
+    window manager, multi-monitor). Um widget filho com
+    `setGeometry(parent.rect())` elimina essa classe inteira de bug: nunca
+    depende de coordenadas de tela nem do SO, só do próprio layout do pai.
+    """
+
+    def __init__(self, parent: QWidget, on_close) -> None:
+        super().__init__(parent)
+        self._on_close = on_close
+
+        self.setObjectName("WebPromoOverlay")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        # Regra escopada por seletor de ID (#WebPromoOverlay), NUNCA
+        # declaração nua: uma regra não-escopada cascateia pra todo
+        # descendente QWidget-puro e produz a regressão "caixas dentro de
+        # caixas" documentada em styles.py::ROOT_WINDOW_OBJECT_NAME. Cor de
+        # scrim deliberadamente independente de tema (isDarkTheme() NÃO é
+        # consultado): um véu preto translúcido funciona nos dois temas, o
+        # overlay não precisa participar de refresh_theme().
+        self.setStyleSheet(
+            "#WebPromoOverlay { background-color: rgba(0, 0, 0, 0.45); }"
+        )
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        card = CardWidget(self)
+        card.setMaximumWidth(420)
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(
+            styles.SPACING_XL,
+            styles.SPACING_XL,
+            styles.SPACING_XL,
+            styles.SPACING_XL,
+        )
+
+        self.title_label = TitleLabel(_WEB_PROMO_TITLE, card)
+        card_layout.addWidget(self.title_label)
+        card_layout.addSpacing(styles.SPACING_MD)
+
+        self.body_label = BodyLabel(_WEB_PROMO_TEXT, card)
+        self.body_label.setWordWrap(True)
+        card_layout.addWidget(self.body_label)
+        card_layout.addSpacing(styles.SPACING_LG)
+
+        buttons = QHBoxLayout()
+        buttons.setSpacing(styles.SPACING_SM)
+        buttons.addStretch(1)
+        self.depois_button = PushButton("Prefiro continuar aqui", card)
+        self.sim_button = PrimaryPushButton("Sim", card)
+        buttons.addWidget(self.depois_button)
+        buttons.addWidget(self.sim_button)
+        card_layout.addLayout(buttons)
+
+        outer.addWidget(card)
+
+        self.sim_button.clicked.connect(lambda: self._on_close(True))
+        self.depois_button.clicked.connect(lambda: self._on_close(False))
+
+        # Esc == recusar, sem abrir URL — preserva o comportamento do
+        # MessageBox anterior (QDialog fecha com reject() no Esc).
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+    def mousePressEvent(self, event) -> None:
+        """Bloqueia cliques de vazarem pro conteúdo das abas por baixo
+        (T-so6-03) — o overlay cobre `MainWindow.rect()` inteiro e fica no
+        topo do z-order (`raise_()`), mas sem isso um QWidget puro deixaria
+        o clique atravessar pra widgets sobrepostos."""
+        event.accept()
+
+    def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_Escape:
+            self._on_close(False)
+            return
+        super().keyPressEvent(event)
+
+
 def visible_tab_labels(session) -> list[str]:
     """Return the tab labels that should be visible for `session`.
 
@@ -76,6 +169,10 @@ class MainWindow(QWidget):
     def __init__(self, session, on_logout, on_toggle_theme, parent=None) -> None:
         super().__init__(parent)
         self._session = session
+        # Inicializado ANTES de qualquer construção de filho: resizeEvent/
+        # showEvent podem disparar durante o build do layout abaixo e
+        # consultam este atributo via _sync_web_overlay_geometry.
+        self._web_overlay: _WebPromoOverlay | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -137,19 +234,31 @@ class MainWindow(QWidget):
         run_in_background(check_for_update, self._on_update_check, lambda _exc: None)
 
         # Popup de anúncio do app web (v1.5.2) — depois do update-check pra
-        # não competir com a InfoBar dele; só na primeira construção.
-        QTimer.singleShot(0, self._mostrar_popup_web)
+        # não competir com a InfoBar dele; só na primeira construção. Chamada
+        # direta (não mais adiada via QTimer): o overlay embutido usa
+        # self.rect() em coordenadas locais, e a corretude da geometria vem
+        # de resizeEvent/showEvent — não do instante da construção — então
+        # o deferral do fix 260724-mo5 deixou de ser necessário.
+        self._mostrar_popup_web()
 
     # --- Popup do app web (uma vez por instalação, v1.5.2) --------------
 
     def _mostrar_popup_web(self) -> None:
         """Mostra o popup de anúncio da versão web, gated pela flag
         persistida em `APP_DIR/web_promo.json`. Fatorado num método próprio
-        (padrão `_mostrar_popup_pdf_gerado` do busca_tab) para que os
-        testes possam monkeypatchá-lo — `MessageBox.exec()` é bloqueante em
-        headless. IO da flag é tolerante a falha (T-sp8-01): erro de
+        (padrão `_mostrar_popup_pdf_gerado` do busca_tab) para que os testes
+        possam monkeypatchá-lo. O popup em si é um `_WebPromoOverlay`
+        (widget filho embutido, ver docstring da classe) construído
+        sincronamente aqui — nada de `.exec()` bloqueante como no antigo
+        `MessageBox`. IO da flag é tolerante a falha (T-sp8-01): erro de
         leitura trata como "não mostrado ainda"; erro de escrita é
-        silencioso — nunca crasha o app."""
+        silencioso — nunca crasha o app. Escrita da flag acontece só na
+        dispensa (`_on_popup_web_close`), espelhando o comportamento
+        anterior em que a flag só era gravada depois do usuário fechar o
+        diálogo bloqueante."""
+        if self._web_overlay is not None:
+            return
+
         flag_path = APP_DIR / _WEB_PROMO_FLAG_NAME
 
         try:
@@ -159,18 +268,57 @@ class MainWindow(QWidget):
         if ja_mostrado:
             return
 
-        box = MessageBox(_WEB_PROMO_TITLE, _WEB_PROMO_TEXT, self.window())
-        box.move(self.window().pos())
-        box.yesButton.setText("Sim")
-        box.cancelButton.setText("Prefiro continuar aqui")
-        if box.exec():
+        self._web_overlay = _WebPromoOverlay(self, self._on_popup_web_close)
+        self._sync_web_overlay_geometry()
+        self._web_overlay.raise_()
+        self._web_overlay.show()
+        self._web_overlay.setFocus()
+
+    def _on_popup_web_close(self, abrir_web: bool) -> None:
+        """Dispensa o popup web (clique em qualquer botão, ou Esc). Se
+        `abrir_web`, abre `_WEB_PROMO_URL` via QDesktopServices antes de
+        persistir a flag (mesmo bloco tolerante a falha de sempre, T-sp8-01).
+        `self._web_overlay` é zerado ANTES de qualquer retorno — permite
+        aos testes assertar `is None` sem depender do event loop processar
+        o `deleteLater`."""
+        overlay = self._web_overlay
+        if overlay is None:
+            return
+
+        if abrir_web:
             QDesktopServices.openUrl(QUrl(_WEB_PROMO_URL))
 
+        flag_path = APP_DIR / _WEB_PROMO_FLAG_NAME
         try:
             flag_path.parent.mkdir(parents=True, exist_ok=True)
             flag_path.write_text(json.dumps({"shown": True}), encoding="utf-8")
         except Exception:
             pass
+
+        overlay.hide()
+        overlay.deleteLater()
+        self._web_overlay = None
+
+    def _sync_web_overlay_geometry(self) -> None:
+        """Ressincroniza a geometria do overlay com `self.rect()` (mesma
+        coordenada local sempre, nunca absoluta de tela). Chamado na
+        criação, em `resizeEvent` e em `showEvent`."""
+        if self._web_overlay is not None:
+            self._web_overlay.setGeometry(self.rect())
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._sync_web_overlay_geometry()
+
+    def showEvent(self, event) -> None:
+        # MainWindow é adicionada a um QStackedWidget já visível em
+        # main.py::_RootWindow._swap(), o que dispara resize + show depois
+        # do __init__ — é aí que a geometria real (≈900x650) chega. Sem
+        # showEvent, uma MainWindow reaproveitada (troca de tema não a
+        # reconstrói) que ainda não tinha overlay quando o show original
+        # ocorreu não teria chance de ressincronizar depois.
+        super().showEvent(event)
+        self._sync_web_overlay_geometry()
 
     # --- Auto-update (Nível 1: check + notify, never self-replace) ------
 
