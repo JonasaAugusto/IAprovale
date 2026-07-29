@@ -2,10 +2,11 @@
 
 Dispara UMA busca em linguagem natural contra o pipeline completo
 (DeepSeek -> MCP PCI Concursos -> backend Render -> DOM) e assere que
-resultados renderizam. Marcado @pytest.mark.costly: a conta E2E e admin
-(isenta de cota, app/search/quota.py), mas NAO e isenta do custo de IA
-por chamada nem do anti-rajada de 10 buscas/60s (app/search/ratelimit.py)
-- por isso, no maximo uma busca por teste (T-12-02).
+resultados renderizam. Marcado @pytest.mark.costly: nao existe mais cota
+diaria de buscas (removida em 2026-07-28, app/search/quota.py), mas a
+conta E2E NAO e isenta do custo de IA por chamada nem do anti-rajada de
+10 buscas/60s (app/search/ratelimit.py) - esse anti-rajada e o motivo real
+de, no maximo, uma busca por teste (T-12-02).
 
 Nao roda no subset diario `pytest -m "not costly"` - so no gate
 pre-release do checkpoint 12-04.
