@@ -102,6 +102,7 @@
           type="text"
           class="busca-input"
           x-model="query"
+          x-on:keydown.enter="buscar()"
           placeholder="Ex: concurso de saúde com graduação em enfermagem"
           aria-label="O que você está procurando"
         >
