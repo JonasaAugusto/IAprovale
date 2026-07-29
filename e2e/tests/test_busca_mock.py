@@ -71,3 +71,35 @@ def test_busca_mock_renders_result_cards(authenticated_page):
         # entao a interceptacao nao pode vazar pro proximo teste (ex.:
         # test_busca.py real, se rodar na mesma invocacao do pytest).
         page.unroute("**/search")
+
+
+def test_busca_mock_enter_dispara_busca(authenticated_page):
+    page = authenticated_page
+
+    def handler(route):
+        route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps(MOCK_RESPONSE),
+        )
+
+    page.route("**/search", handler)
+
+    try:
+        page.fill(".busca-input", "qualquer frase — nao vai pro backend")
+        page.press(".busca-input", "Enter")
+
+        # Escopo ".busca-results .concurso-card" (nao so ".concurso-card"):
+        # o skeleton de loading tambem usa a classe "concurso-card" nos
+        # placeholders visiveis enquanto loading=true.
+        page.wait_for_selector(".busca-results .concurso-card")
+
+        cards = page.locator(".busca-results .concurso-card")
+        assert cards.count() == len(MOCK_RESPONSE["results"])
+
+        primeiro_titulo = cards.first.locator(".concurso-card-titulo").inner_text()
+        assert primeiro_titulo.strip() == MOCK_RESPONSE["results"][0]["titulo"]
+    finally:
+        # Higiene: authenticated_page e session-scoped (page compartilhada),
+        # entao a interceptacao nao pode vazar pro proximo teste.
+        page.unroute("**/search")
