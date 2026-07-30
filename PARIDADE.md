@@ -12,6 +12,7 @@ Não é burocracia — é a única coisa que garante que quem usa o desktop e qu
 | Busca em linguagem natural | ok | ok | WBUSCA-01 |
 | Busca com perfil | ok | ok | WBUSCA-01 |
 | Cards de resultado (badge NOVO, chips "+N outros", localização UF·região, prazo BR MM/AAAA, link copiar) | ok | ok | v1.5.2 (WBUSCA-02) |
+| Ordenação regional dos resultados (mesma UF > mesma região > resto) | ok | ok | v1.6.0 (RANK-01/RANK-02, checkpoint 12.1.1-04) |
 | Tutorial "Como pesquisar" | ok | ok | v1.5.2 (WBUSCA-04) |
 | Perfil completo (escolaridade cumulativa, formação futura MM/AAAA, CEP, mobilidade, áreas) | ok | ok | WPERFIL-01 |
 | Currículo (anexar PDF/TXT, extração local, sem custo de IA) | ok | ok | WPERFIL-02 |
