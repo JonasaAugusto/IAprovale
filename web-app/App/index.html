@@ -241,6 +241,7 @@
               <span class="admin-tag admin-tag-inativo" x-show="!u.is_active">[inativo]</span>
             </div>
             <div class="admin-user-actions">
+              <button type="button" class="btn btn-ghost admin-action-btn" x-on:click="abrirVerInfo(u)">Ver info</button>
               <button type="button" class="btn btn-ghost admin-action-btn" x-on:click="abrirRenomear(u)">Editar nome</button>
               <button type="button" class="btn btn-ghost admin-action-btn" x-on:click="gerarSenha(u)">Gerar nova senha</button>
               <button
@@ -347,6 +348,36 @@
                 x-text="confirmTextoBotao"
               ></button>
               <button type="button" class="btn btn-ghost" x-on:click="cancelarConfirmacao()">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="modal-backdrop"
+        x-cloak
+        x-show="!!verInfoOpen"
+        x-on:click.self="fecharVerInfo()"
+        x-on:keydown.escape.window="fecharVerInfo()"
+      >
+        <div id="ver-info-dialog" class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="ver-info-title" tabindex="-1">
+          <div class="modal-header">
+            <h2 id="ver-info-title" x-text="'Ver info - ' + (verInfoUser ? verInfoUser.username : '')"></h2>
+            <button type="button" class="modal-close" x-on:click="fecharVerInfo()" aria-label="Fechar">×</button>
+          </div>
+          <div class="modal-body">
+            <p x-show="verInfoCarregando">Carregando...</p>
+            <p class="admin-erro" x-show="!!verInfoErro" x-text="verInfoErro"></p>
+            <div class="ver-info-cards">
+              <template x-for="card in verInfoCards()" x-bind:key="card.rotulo">
+                <div class="ver-info-card">
+                  <span class="ver-info-numero" x-text="card.numero"></span>
+                  <span class="ver-info-rotulo" x-text="card.rotulo"></span>
+                </div>
+              </template>
+            </div>
+            <div class="admin-modal-actions">
+              <button type="button" class="btn btn-ghost" x-on:click="fecharVerInfo()">Fechar</button>
             </div>
           </div>
         </div>

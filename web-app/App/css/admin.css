@@ -44,11 +44,6 @@
 }
 
 .admin-search-input {
-  /* type="search" tem chrome nativo próprio no WebKit/iOS (botão de limpar
-     embutido, cantos arredondados forçados) que faz o input renderizar
-     visivelmente diferente de .busca-input (type="text") mesmo com CSS
-     idêntico — neutralizado para os dois inputs terem o mesmo tamanho no
-     telefone, como pedido pelo usuário. */
   appearance: none;
   -webkit-appearance: none;
   display: block;
@@ -159,6 +154,34 @@
   flex: 1;
 }
 
+.ver-info-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin: 0.5rem 0 0.5rem;
+}
+
+.ver-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.ver-info-numero {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.ver-info-rotulo {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 @media (max-width: 640px) {
   .admin-add-row {
     flex-direction: column;
@@ -173,6 +196,10 @@
 
   .admin-user-actions {
     justify-content: flex-start;
+  }
+
+  .ver-info-cards {
+    grid-template-columns: 1fr;
   }
 }
 
