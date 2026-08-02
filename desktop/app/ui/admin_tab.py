@@ -4,7 +4,7 @@
 admin/inativo tags) and performs all six admin operations against the
 existing backend endpoints (`GET/POST /auth/users`, `PATCH .../deactivate`,
 `PATCH .../reactivate`, `POST .../reset-password`, `PATCH .../username`,
-`DELETE /auth/users/{id}`) via `api_client`.
+`DELETE /auth/users/{id}`, `GET .../usage`) via `api_client`.
 
 All backend authorization is enforced server-side by `require_admin`
 (Phase 1) — this tab's own visibility (gated by `session.is_admin` in
@@ -15,13 +15,15 @@ is handled the same way as any other error: surfaced verbatim in the inline
 Per 05-UI-SPEC.md's Error Display Contract, only these things ever use a
 modal (`MessageBox`/`MessageBoxBase`): the four destructive/state-changing
 confirmations (deactivate/reactivate/delete/reset password), the one-time
-generated-password reveal, and the rename input dialog. Every other
-status/error uses the inline `InfoBar` at the top of the tab.
+generated-password reveal, the rename input dialog, and the read-only
+"Ver info" usage panel (Fase 12.1, WADMIN-04). Every other status/error
+uses the inline `InfoBar` at the top of the tab.
 """
 
 from __future__ import annotations
 
 import unicodedata
+from datetime import datetime
 
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
@@ -54,6 +56,28 @@ def _normalizar(texto: str) -> str:
     ("MÁRCOS" -> "marcos"). Espelho da ideia do normalizar() do backend."""
     nfkd = unicodedata.normalize("NFKD", texto)
     return "".join(c for c in nfkd if unicodedata.category(c) != "Mn").casefold()
+
+
+def _formatar_dia(valor: str | None) -> str:
+    """"YYYY-MM-DD" -> "DD/MM/AAAA"; None, vazio ou não parseável -> "nunca"
+    (contrato de exibição idêntico ao plano 12.1-04/web, D-06)."""
+    if not valor:
+        return "nunca"
+    try:
+        return datetime.strptime(valor, "%Y-%m-%d").strftime("%d/%m/%Y")
+    except ValueError:
+        return "nunca"
+
+
+def _formatar_data_hora(valor: str | None) -> str:
+    """ISO-8601 -> "DD/MM/AAAA HH:MM"; None, vazio ou não parseável ->
+    "nunca" (contrato de exibição idêntico ao plano 12.1-04/web, D-06)."""
+    if not valor:
+        return "nunca"
+    try:
+        return datetime.fromisoformat(valor.replace("Z", "+00:00")).strftime("%d/%m/%Y %H:%M")
+    except ValueError:
+        return "nunca"
 
 
 def _style_destructive(button) -> None:
@@ -155,6 +179,39 @@ class _RenameDialog(MessageBoxBase):
         return self._name_edit.text().strip()
 
 
+class _UserInfoDialog(MessageBoxBase):
+    """Read-only "Ver info" usage panel (Fase 12.1, D-06/WADMIN-04) — 6
+    cards com pesquisas normais/com currículo, gasto em IA, concursos
+    retornados, última busca e último login. Sem "X" (não é o idioma do
+    desktop — `MessageBoxBase` é frameless e fecha só pela barra de
+    botões, como `_PasswordRevealDialog`/`_RenameDialog`).
+    """
+
+    def __init__(self, usage: dict, parent=None) -> None:
+        super().__init__(parent)
+        self.viewLayout.addWidget(
+            StrongBodyLabel(f"Ver info - {usage['username']}", self)
+        )
+
+        cards = [
+            (str(usage.get("normal_count", 0)), "Pesquisas normais"),
+            (str(usage.get("curriculo_count", 0)), "Pesquisas com currículo"),
+            ("US$ " + f"{float(usage.get('token_cost_usd') or 0):.4f}", "Gasto em IA"),
+            (str(usage.get("resultados_count", 0)), "Concursos retornados"),
+            (_formatar_dia(usage.get("ultima_busca")), "Última busca"),
+            (_formatar_data_hora(usage.get("last_login_at")), "Último login"),
+        ]
+        for numero, rotulo in cards:
+            card = CardWidget(self)
+            card_layout = QVBoxLayout(card)
+            card_layout.addWidget(StrongBodyLabel(numero, card))
+            card_layout.addWidget(CaptionLabel(rotulo, card))
+            self.viewLayout.addWidget(card)
+
+        self.yesButton.hide()
+        self.cancelButton.setText("Fechar")
+
+
 class AdminTab(QWidget):
     def __init__(self, session, parent=None) -> None:
         super().__init__(parent)
@@ -251,8 +308,12 @@ class AdminTab(QWidget):
         row_layout.addStretch(1)
 
         # Button order (right-aligned, per 05-UI-SPEC.md Admin tab
-        # contract): Editar nome, Gerar nova senha, Desativar|Reativar,
-        # Excluir (hidden on the acting admin's own row).
+        # contract): Ver info, Editar nome, Gerar nova senha,
+        # Desativar|Reativar, Excluir (hidden on the acting admin's own row).
+        ver_info_button = PushButton("Ver info", row)
+        ver_info_button.clicked.connect(lambda _checked=False, u=user: self._on_ver_info_click(u))
+        row_layout.addWidget(ver_info_button)
+
         rename_button = PushButton("Editar nome", row)
         rename_button.clicked.connect(lambda _checked=False, u=user: self._on_rename_click(u))
         row_layout.addWidget(rename_button)
@@ -410,6 +471,20 @@ class AdminTab(QWidget):
             self._on_mutation_ok,
             self._on_error,
         )
+
+    # --- ver info (WADMIN-04) -----------------------------------------------------
+
+    def _on_ver_info_click(self, user: dict) -> None:
+        self._clear_error()
+        run_in_background(
+            lambda: api_client.get_user_usage(user["user_id"]),
+            self._show_user_info,
+            self._on_error,
+        )
+
+    def _show_user_info(self, usage: dict) -> None:
+        dialog = _UserInfoDialog(usage, parent=self.window())
+        dialog.exec()
 
     # --- shared helpers -----------------------------------------------------
 

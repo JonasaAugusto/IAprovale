@@ -87,9 +87,11 @@ def test_own_row_hides_excluir_other_row_shows_it(qtbot, tab, captured):
     assert "Excluir" not in own_row_buttons
     assert "Excluir" in other_row_buttons
     # Button order (per 05-UI-SPEC.md Admin tab contract) preserved on the
-    # non-self row: Editar nome, Gerar nova senha, Desativar, Excluir.
-    assert other_row_buttons == ["Editar nome", "Gerar nova senha", "Desativar", "Excluir"]
-    assert own_row_buttons == ["Editar nome", "Gerar nova senha", "Desativar"]
+    # non-self row: Ver info, Editar nome, Gerar nova senha, Desativar, Excluir.
+    assert other_row_buttons == [
+        "Ver info", "Editar nome", "Gerar nova senha", "Desativar", "Excluir"
+    ]
+    assert own_row_buttons == ["Ver info", "Editar nome", "Gerar nova senha", "Desativar"]
 
 
 def test_inactive_user_shows_reativar_not_desativar(qtbot, tab, captured):
@@ -397,3 +399,59 @@ def test_filtro_persiste_apos_reload_sem_crash(qtbot, tab, captured):
     # digitado continua aplicado.
     captured.on_success(users)
     assert _rendered_usernames(tab) == ["marcoshenrique"]
+
+
+# ---------------------------------------------------------------------------
+# (d) Fase 12.1 (WADMIN-04): "Ver info" usage panel
+# ---------------------------------------------------------------------------
+
+
+def test_ver_info_button_present_as_first_button_in_row(qtbot, tab, captured):
+    from qfluentwidgets import PushButton
+
+    users = [
+        {"user_id": "user-2", "username": "ana", "is_admin": False, "is_active": True},
+    ]
+    captured.on_success(users)
+
+    row = tab._list_layout.itemAt(0).widget()
+    button_texts = [b.text() for b in row.findChildren(PushButton)]
+    assert button_texts[0] == "Ver info"
+
+
+def test_ver_info_click_dispatches_via_run_in_background(qtbot, tab, captured):
+    user = {"user_id": "user-2", "username": "ana", "is_admin": False, "is_active": True}
+    calls_before = captured.calls
+
+    tab._on_ver_info_click(user)
+
+    assert captured.calls == calls_before + 1
+    assert captured.on_error == tab._on_error
+
+
+def test_ver_info_dialog_copy_matches_display_contract():
+    src = inspect.getsource(admin_tab_module._UserInfoDialog)
+    assert "Ver info - " in src
+    assert "Pesquisas normais" in src
+    assert "Pesquisas com currículo" in src
+    assert "Gasto em IA" in src
+    assert "Concursos retornados" in src
+    assert "Última busca" in src
+    assert "Último login" in src
+    assert "Fechar" in src
+    assert "yesButton.hide()" in src
+    assert "×" not in src
+
+
+def test_formatar_dia_casos():
+    assert admin_tab_module._formatar_dia("2026-07-27") == "27/07/2026"
+    assert admin_tab_module._formatar_dia(None) == "nunca"
+    assert admin_tab_module._formatar_dia("") == "nunca"
+    assert admin_tab_module._formatar_dia("lixo") == "nunca"
+
+
+def test_formatar_data_hora_casos():
+    assert admin_tab_module._formatar_data_hora("2026-07-27T10:30:00Z") == "27/07/2026 10:30"
+    assert admin_tab_module._formatar_data_hora(None) == "nunca"
+    assert admin_tab_module._formatar_data_hora("") == "nunca"
+    assert admin_tab_module._formatar_data_hora("lixo") == "nunca"
