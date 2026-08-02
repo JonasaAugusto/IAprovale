@@ -44,6 +44,13 @@
 }
 
 .admin-search-input {
+  /* type="search" tem chrome nativo próprio no WebKit/iOS (botão de limpar
+     embutido, cantos arredondados forçados) que faz o input renderizar
+     visivelmente diferente de .busca-input (type="text") mesmo com CSS
+     idêntico — neutralizado para os dois inputs terem o mesmo tamanho no
+     telefone, como pedido pelo usuário. */
+  appearance: none;
+  -webkit-appearance: none;
   display: block;
   width: 100%;
   padding: 0.7rem 0.9rem;
