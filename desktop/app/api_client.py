@@ -278,6 +278,14 @@ def rename_user(user_id: str, new_username: str) -> dict:
     )
 
 
+def get_user_usage(user_id: str) -> dict:
+    """GET /auth/users/{user_id}/usage -> {user_id, username, normal_count,
+    curriculo_count, token_cost_usd, resultados_count, ultima_busca,
+    last_login_at}. 404 -> NotFoundError (existing `_STATUS_TO_EXC` mapping,
+    backend `detail` carried verbatim)."""
+    return _request("GET", f"/auth/users/{user_id}/usage", auth=True)
+
+
 def delete_user(user_id: str) -> None:
     """DELETE /auth/users/{user_id} -> None (204). Permanent, irreversible.
 

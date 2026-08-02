@@ -264,6 +264,46 @@ def test_admin_methods_target_correct_urls(fake_response):
 
 
 # ---------------------------------------------------------------------------
+# Phase 12.1 (WADMIN-02/04): get_user_usage
+# ---------------------------------------------------------------------------
+
+
+def test_get_user_usage_targets_correct_url_and_auth(fake_response):
+    api_client.set_token("tok")
+    usage_resp = fake_response(
+        status_code=200,
+        json_body={
+            "user_id": "u2",
+            "username": "maria",
+            "normal_count": 3,
+            "curriculo_count": 1,
+            "token_cost_usd": 0.0123,
+            "resultados_count": 42,
+            "ultima_busca": "2026-07-27",
+            "last_login_at": "2026-07-27T10:30:00Z",
+        },
+        url=config.BACKEND_URL + "/auth/users/u2/usage",
+    )
+    with patch("app.api_client.requests.request", return_value=usage_resp) as mock_request:
+        result = api_client.get_user_usage("u2")
+    args, kwargs = mock_request.call_args
+    assert args[0] == "GET"
+    assert args[1] == config.BACKEND_URL + "/auth/users/u2/usage"
+    assert kwargs["headers"] == {"Authorization": "Bearer tok"}
+    assert result["normal_count"] == 3
+    assert result["ultima_busca"] == "2026-07-27"
+
+
+def test_get_user_usage_404_raises_not_found_with_detail(fake_response):
+    api_client.set_token("tok")
+    resp = fake_response(status_code=404, json_body={"detail": "Usuário não encontrado"})
+    with patch("app.api_client.requests.request", return_value=resp):
+        with pytest.raises(api_client.NotFoundError) as exc_info:
+            api_client.get_user_usage("inexistente")
+    assert exc_info.value.detail == "Usuário não encontrado"
+
+
+# ---------------------------------------------------------------------------
 # Task 2 (quick-260711-x4h): delete_user + typed 409 exceptions
 # ---------------------------------------------------------------------------
 
