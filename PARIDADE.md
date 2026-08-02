@@ -18,6 +18,7 @@ Não é burocracia — é a única coisa que garante que quem usa o desktop e qu
 | Currículo (anexar PDF/TXT, extração local, sem custo de IA) | ok | ok | WPERFIL-02 |
 | PDF (POST /pdf, template fpdf2 idêntico) | ok | ok | WPDF-01/02 |
 | Admin CRUD | ok | ok | WADMIN-01 |
+| Painel de info por usuário ("Ver info": pesquisas, gasto em IA, concursos retornados, última busca, último login) | ok | ok | WADMIN-04 (pendente checkpoint 12.1-06) |
 | Tema claro/escuro | ok | ok | WEB-06 |
 | Cold start tratado ("Conectando ao servidor...") | ok | ok | WAUTH-04 |
 | Popup de divulgação da web (desktop only, by design) | v1.5.2 | N/A | DPOP-01, commit 18e83d0 |
