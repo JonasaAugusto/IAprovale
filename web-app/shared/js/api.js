@@ -130,6 +130,9 @@ window.cfApi = (function () {
     resetPassword: function (userId) {
       return request("POST", "/auth/users/" + userId + "/reset-password", { auth: true });
     },
+    getUserUsage: function (userId) {
+      return request("GET", "/auth/users/" + userId + "/usage", { auth: true });
+    },
     deactivateUser: function (userId) {
       return request("PATCH", "/auth/users/" + userId + "/deactivate", { auth: true });
     },

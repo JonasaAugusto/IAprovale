@@ -16,6 +16,12 @@ document.addEventListener("alpine:init", () => {
     revealPassword: "",
     revealCopiado: false,
 
+    verInfoOpen: false,
+    verInfoUser: null,
+    verInfoData: null,
+    verInfoErro: "",
+    verInfoCarregando: false,
+
     renameOpen: false,
     renameUser: null,
     renameValue: "",
@@ -141,6 +147,60 @@ document.addEventListener("alpine:init", () => {
       if (!this.revealOpen) return;
       this.revealOpen = false;
       this._aoFecharModal();
+    },
+
+    async abrirVerInfo(u) {
+      this._registrarTrigger();
+      this.verInfoUser = u;
+      this.verInfoData = null;
+      this.verInfoErro = "";
+      this.verInfoOpen = true;
+      this._aoAbrirModal("ver-info-dialog");
+      this.verInfoCarregando = true;
+      try {
+        this.verInfoData = await window.cfApi.getUserUsage(u.user_id);
+      } catch (err) {
+        this.verInfoErro = (err && err.detail) || "Não foi possível carregar as informações.";
+      } finally {
+        this.verInfoCarregando = false;
+      }
+    },
+
+    fecharVerInfo() {
+      if (!this.verInfoOpen) return;
+      this.verInfoOpen = false;
+      this._aoFecharModal();
+    },
+
+    verInfoCards() {
+      if (!this.verInfoData) return [];
+      const d = this.verInfoData;
+      return [
+        { numero: String(d.normal_count), rotulo: "Pesquisas normais" },
+        { numero: String(d.curriculo_count), rotulo: "Pesquisas com currículo" },
+        { numero: "US$ " + Number(d.token_cost_usd || 0).toFixed(4), rotulo: "Gasto em IA" },
+        { numero: String(d.resultados_count), rotulo: "Concursos retornados" },
+        { numero: this._formatarData(d.ultima_busca), rotulo: "Última busca" },
+        { numero: this._formatarDataHora(d.last_login_at), rotulo: "Último login" },
+      ];
+    },
+
+    _formatarData(iso) {
+      if (!iso) return "nunca";
+      const partes = iso.split("-");
+      if (partes.length !== 3) return "nunca";
+      return partes[2] + "/" + partes[1] + "/" + partes[0];
+    },
+
+    _formatarDataHora(iso) {
+      if (!iso) return "nunca";
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "nunca";
+      const pad = (n) => String(n).padStart(2, "0");
+      return (
+        pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + d.getFullYear() +
+        " " + pad(d.getHours()) + ":" + pad(d.getMinutes())
+      );
     },
 
     abrirRenomear(u) {
