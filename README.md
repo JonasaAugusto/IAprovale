@@ -2,7 +2,7 @@
 
 Buscador de concursos públicos privado e por convite, com IA. O usuário descreve em linguagem natural o que procura (ex: *"concurso na área de saúde com graduação em enfermagem"*) e o sistema filtra automaticamente apenas os concursos com inscrições abertas que aceitam a formação informada, a pesquisa também é alimentada por um sistema de Formulário na aba de Perfil.
 
-**Versões:** desktop **v1.6.0** (Windows) · web app **v2.0** (GitHub Pages) — funcionalidades completas, aguardando checkpoint final de E2E antes do release
+**Versões:** desktop **v2.0.0** (Windows) · web app **v2.0** (GitHub Pages) — funcionalidades completas, aguardando checkpoint final de E2E antes do release
 
 ## Sumário
 
@@ -66,7 +66,7 @@ Tecnologias do backend: **DeepSeek** (via SDK OpenAI-compatível) para estrutura
 
 ## App Desktop (Windows)
 
-Cliente nativo empacotado em `.exe` standalone. É a versão completa e estável (v1.6.0).
+Cliente nativo empacotado em `.exe` standalone. É a versão completa e estável (v2.0.0).
 
 - **Python 3 + PySide6 (Qt 6)** com **PySide6-Fluent-Widgets**: visual Fluent Design, tema claro/escuro ao vivo.
 - **Exportação em PDF local** (fpdf2, 100% Python): mesmo padrão visual dos cards, com Visualizar / Salvar / Apagar.
