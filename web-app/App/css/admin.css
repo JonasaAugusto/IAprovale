@@ -13,6 +13,8 @@
 }
 
 .admin-add-input {
+  appearance: none;
+  -webkit-appearance: none;
   flex: 1 1 220px;
   padding: 0.7rem 0.9rem;
   border-radius: var(--radius-sm);

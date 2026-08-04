@@ -23,3 +23,9 @@ backend/
 
 # Internal working notes (AI Q&A draft), not meant for the public homepage repo
 web-app/homepage/\!duvidas/
+
+# Métricas internas do projeto (uso pessoal/portfólio), não é conteúdo do produto
+Zmetricas.md
+
+# Registro pessoal de commits/comandos de push, uso interno, não é do produto
+COMMITS
