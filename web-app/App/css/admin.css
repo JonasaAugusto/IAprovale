@@ -190,6 +190,10 @@
     align-items: stretch;
   }
 
+  .admin-add-input {
+    flex-basis: auto;
+  }
+
   .admin-user-row {
     flex-direction: column;
     align-items: stretch;
