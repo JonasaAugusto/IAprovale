@@ -51,7 +51,7 @@ API REST assíncrona em **FastAPI + Uvicorn**, organizada em módulos independen
 | `profile` | Perfil de formação do usuário (escolaridade, formações, mobilidade, currículo) |
 | `search` | Pipeline da busca: IA traduz a frase → consulta ao MCP da PCI Concursos → filtros de compatibilidade → marcação de já vistos, com limite de uso por usuário |
 | `cep` | Consulta de CEP para preencher cidade/UF no perfil |
-| `core` / `db` | Configuração, dependências de autenticação e modelos de dados (SQLModel + Postgres/Neon) |
+| `core` / `db` | Configuração, dependências de autenticação e modelos de dados (SQLModel + Postgres local da VPS) |
 
 Tecnologias do backend: **DeepSeek** (via SDK OpenAI-compatível) para estruturar a busca, **MCP oficial da PCI Concursos** (JSON-RPC via httpx, sem scraping) como fonte de dados, **SQLModel/SQLAlchemy + Postgres** para persistência, **VPS própria com Caddy** (HTTPS Let's Encrypt automático) para hospedagem.
 
@@ -101,7 +101,11 @@ Web app (milestone v2.0) que reusa o mesmo backend do desktop, acessível de qua
 - **Acesso privado por convite**: sem autocadastro; só o admin cria e gerencia contas.
 - **Web sem framework nem bundler**: menos superfície de ataque, deploy trivial em hospedagem estática gratuita e compatibilidade com política de segurança de conteúdo rígida.
 - **Paridade visual entre clientes**: cards, badges, textos de ajuda e mensagens de erro seguem o mesmo padrão no desktop e no web.
-- **Migração Render para VPS própria (Caddy)**: o free tier do Render hibernava após inatividade (arranque de 30-90 s) e o banco estava em serviço externo. A API foi para a VPS atrás do Caddy, com HTTPS Let's Encrypt e banco restaurado e incluído no backup; responde em menos de 1 s. Buscas mantêm timeout de 90 s (IA + MCP); os clientes continuam com URL configurável (`CONCURSO_FINDER_BACKEND_URL` no desktop).
+- **Migração do Render para a VPS própria (24/10/2026)**: a API saiu do Render (free tier) e dos dados no Supabase e passou a rodar em https://api.iaprovale.augustusai.com.br.
+  - **Por quê**: (1) custo, pois a VPS já existe e hospeda os outros projetos, sem plano pago do Render; (2) sem cold start, já que o free tier hibernava após inatividade e o primeiro acesso levava de 30 a 90 s, por isso o aviso de 1 minuto saiu dos textos do desktop e do web; (3) tudo no backup, porque o banco passa a entrar no backup diário restic da VPS (dump do banco + pasta do projeto), o que o Supabase fora do backup não garantia; (4) bancos internos na VPS, sem Supabase, para ter controle e um único lugar de operação.
+  - **Como ficou**: o uvicorn roda como serviço **systemd** (`Restart=on-failure`), escutando só em `127.0.0.1`, com usuário Linux próprio e `.env` com permissão restrita. O **Caddy** é o proxy na frente, com HTTPS automático (Let's Encrypt) e cabeçalhos de segurança; só as portas 80/443 foram abertas e o Postgres escuta apenas em loopback. Os dados do Supabase (schema `public`) foram restaurados com `pg_dump`/`pg_restore` no **Postgres local** da VPS, com contagem de linhas conferida.
+  - **Clientes**: o web (GitHub Pages) e o desktop (v2.0.1) apontam para a nova API (no desktop continua configurável por `CONCURSO_FINDER_BACKEND_URL`), e o webhook do Mercado Pago foi reapontado para `/webhooks/mercadopago` no novo domínio. O Render e o Supabase ficam como reserva por alguns dias antes de serem desligados.
+  - Buscas mantêm timeout de 90 s (IA + MCP) e a API responde em menos de 1 s.
 - **Testes como guarda de regressão**: suíte do desktop roda como gate antes de fechar cada fase de desenvolvimento.
 
 ## Segurança
