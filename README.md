@@ -2,7 +2,7 @@
 
 Buscador de concursos públicos privado e por convite, com IA. O usuário descreve em linguagem natural o que procura (ex: *"concurso na área de saúde com graduação em enfermagem"*) e o sistema filtra automaticamente apenas os concursos com inscrições abertas que aceitam a formação informada, a pesquisa também é alimentada por um sistema de Formulário na aba de Perfil.
 
-**Versões:** desktop **v2.0.0** (Windows) · web app **v2.0** (GitHub Pages) — funcionalidades completas, aguardando checkpoint final de E2E antes do release
+**Versões:** desktop **v2.0.1** (Windows) · web app **v2.0** (GitHub Pages) — funcionalidades completas, aguardando checkpoint final de E2E antes do release
 
 ## Sumário
 
@@ -33,7 +33,7 @@ web-app/    Homepage institucional + web app (rotas /Login e /App)
 e2e/        Suíte Playwright (Python) de ponta-a-ponta contra o backend real
 ```
 
-O backend (FastAPI) vive em um repositório privado separado e é deployado no Render. Este repositório público contém apenas os clientes.
+O backend (FastAPI) vive em um repositório privado separado e é deployado numa VPS própria (https://api.iaprovale.augustusai.com.br). Este repositório público contém apenas os clientes.
 
 ## Arquitetura compartilhada (backend único)
 
@@ -53,7 +53,7 @@ API REST assíncrona em **FastAPI + Uvicorn**, organizada em módulos independen
 | `cep` | Consulta de CEP para preencher cidade/UF no perfil |
 | `core` / `db` | Configuração, dependências de autenticação e modelos de dados (SQLModel + Postgres/Neon) |
 
-Tecnologias do backend: **DeepSeek** (via SDK OpenAI-compatível) para estruturar a busca, **MCP oficial da PCI Concursos** (JSON-RPC via httpx, sem scraping) como fonte de dados, **SQLModel/SQLAlchemy + Postgres (Neon)** para persistência, **Render.com** para hospedagem.
+Tecnologias do backend: **DeepSeek** (via SDK OpenAI-compatível) para estruturar a busca, **MCP oficial da PCI Concursos** (JSON-RPC via httpx, sem scraping) como fonte de dados, **SQLModel/SQLAlchemy + Postgres** para persistência, **VPS própria com Caddy** (HTTPS Let's Encrypt automático) para hospedagem.
 
 ### Fluxos idênticos nos dois clientes
 
@@ -61,12 +61,12 @@ Tecnologias do backend: **DeepSeek** (via SDK OpenAI-compatível) para estrutura
 - **Busca em linguagem natural**: a IA entende formação, cargo, cidade/estado/região e busca para terceiros ("concurso para minha esposa, que é engenheira").
 - **Busca com perfil**: um clique busca "na minha área" usando a formação salva.
 - **Dedup sem esconder nada**: concursos já vistos são apenas marcados (badge NOVO nos inéditos); a busca sempre retorna novos e antigos.
-- **Cold start tratado**: o backend no free tier hiberna após inatividade; os dois clientes mostram "Conectando ao servidor..." em vez de uma tela parecendo quebrada.
+- **Conexão tratada**: os dois clientes mostram "Conectando ao servidor..." durante o login e reconectam sozinhos se a rede cair; o backend na VPS responde em menos de 1 s.
 - **Administração**: gestão de usuários exclusiva de contas admin, com revalidação de permissão no servidor a cada operação.
 
 ## App Desktop (Windows)
 
-Cliente nativo empacotado em `.exe` standalone. É a versão completa e estável (v2.0.0).
+Cliente nativo empacotado em `.exe` standalone. É a versão completa e estável (v2.0.1).
 
 - **Python 3 + PySide6 (Qt 6)** com **PySide6-Fluent-Widgets**: visual Fluent Design, tema claro/escuro ao vivo.
 - **Exportação em PDF local** (fpdf2, 100% Python): mesmo padrão visual dos cards, com Visualizar / Salvar / Apagar.
@@ -101,6 +101,7 @@ Web app (milestone v2.0) que reusa o mesmo backend do desktop, acessível de qua
 - **Acesso privado por convite**: sem autocadastro; só o admin cria e gerencia contas.
 - **Web sem framework nem bundler**: menos superfície de ataque, deploy trivial em hospedagem estática gratuita e compatibilidade com política de segurança de conteúdo rígida.
 - **Paridade visual entre clientes**: cards, badges, textos de ajuda e mensagens de erro seguem o mesmo padrão no desktop e no web.
+- **Migração Render para VPS própria (Caddy)**: o free tier do Render hibernava após inatividade (arranque de 30-90 s) e o banco estava em serviço externo. A API foi para a VPS atrás do Caddy, com HTTPS Let's Encrypt e banco restaurado e incluído no backup; responde em menos de 1 s. Buscas mantêm timeout de 90 s (IA + MCP); os clientes continuam com URL configurável (`CONCURSO_FINDER_BACKEND_URL` no desktop).
 - **Testes como guarda de regressão**: suíte do desktop roda como gate antes de fechar cada fase de desenvolvimento.
 
 ## Segurança

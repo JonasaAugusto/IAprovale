@@ -153,7 +153,7 @@ def test_auto_login_network_error_stays_and_retries(qtbot, monkeypatch):
     shows the main window while disconnected."""
     window, captured = _make_root_with_saved_session(qtbot, monkeypatch)
 
-    captured["on_error"](api_client.ConnectionFailedError("cold start"))
+    captured["on_error"](api_client.ConnectionFailedError("network down"))
 
     assert window._reconnect_timer.isActive()  # retrying
     assert window._main_window is None  # never showed main disconnected

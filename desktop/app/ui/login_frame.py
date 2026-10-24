@@ -3,7 +3,7 @@
 `LoginFrame` collects username/password, submits `api_client.login()`
 off the main thread via `async_helpers.run_in_background` (Pitfall 1 — a
 direct call inside a `command=`/`lambda:` handler would freeze the UI for
-the full round-trip, up to Render's ~30-90s cold-start latency), and
+the full round-trip, normally <1s on the VPS, longer on a bad network), and
 reports a constructed `auth_store.Session` upward through `on_success` on
 a successful login.
 

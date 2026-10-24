@@ -9,7 +9,7 @@
 
   var ENTRAR_TEXT = button.textContent;
   var CONNECTING_TEXT = "Conectando ao servidor...";
-  var MAX_TENTATIVAS_CONEXAO = 2;
+  var MAX_TENTATIVAS_CONEXAO = 1;
 
   function isConnectionFailure(err) {
     return err && (err.name === "TypeError" || err.name === "AbortError");

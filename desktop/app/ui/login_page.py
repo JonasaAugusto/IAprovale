@@ -3,14 +3,14 @@
 `LoginPage` collects username/password, submits `api_client.login()` off
 the GUI thread via `async_helpers.run_in_background` (HARD RULE — a direct
 call inside a clicked-signal handler would freeze the UI for the full
-round-trip, up to Render's ~30-90s cold-start latency), and reports a
+round-trip, normally <1s on the VPS, longer on a bad network), and reports a
 constructed `auth_store.Session` upward through `on_success` on a
 successful login.
 
 D-05 (NEW behavior — not present in the Tkinter analog): the instant login
 is submitted, the "Entrar" button disables AND its text changes to
-"Conectando ao servidor...", visible feedback during Render's cold-start
-wait (the old version only disabled the button with no explanatory text).
+"Conectando ao servidor...", brief visible feedback during the round-trip
+ (the old version only disabled the button with no explanatory text).
 Reverts to "Entrar"/enabled on success or error.
 
 Error handling follows 05-UI-SPEC.md's Error Display Contract: failures

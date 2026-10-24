@@ -99,7 +99,7 @@ def _raise_for_status(resp: requests.Response) -> None:
         return
 
     # The backend's own errors are JSON with a PT-BR `detail`. But the most
-    # common production error — a Render free-tier cold start / proxy 5xx —
+    # common production error — a proxy/upstream 5xx —
     # returns an HTML body, so resp.json() raises. Fall back to a status-based
     # PT-BR message instead of leaking a raw "Expecting value: line 1..." to
     # the user (T-03).
@@ -110,7 +110,7 @@ def _raise_for_status(resp: requests.Response) -> None:
         except ValueError:
             if resp.status_code >= 500:
                 detail = (
-                    "O servidor está iniciando ou instável no momento. "
+                    "O servidor está instável no momento. "
                     "Aguarde alguns segundos e tente novamente."
                 )
             else:
@@ -155,7 +155,7 @@ def _request(
     Wraps `requests.request`, mapping connection-level failures (no HTTP
     response at all) to typed exceptions, then delegates status-code
     handling to `_raise_for_status`. `timeout` defaults to 90s to
-    accommodate Render free-tier cold starts plus DeepSeek/MCP latency
+    accommodate long searches (DeepSeek/MCP latency; the server itself answers in <1s)
     (BUSCA-06/D-02) — a short timeout would spuriously fail real searches.
     """
     url = config.BACKEND_URL + path

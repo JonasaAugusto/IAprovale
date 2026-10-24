@@ -74,7 +74,7 @@ def test_detail_passthrough_verbatim(fake_response):
 
 
 def test_non_json_5xx_body_yields_friendly_message(fake_response):
-    """T-03: a 5xx with an HTML body (Render cold start / proxy error) must
+    """T-03: a 5xx with an HTML body (proxy/upstream error) must
     produce a legible PT-BR message, never a raw 'Expecting value...' string."""
     resp = fake_response(status_code=502, non_json=True)
     with pytest.raises(api_client.SearchFailedError) as exc_info:
@@ -467,3 +467,20 @@ def test_rename_user_404_raises_not_found_error(fake_response):
         with pytest.raises(api_client.NotFoundError) as exc_info:
             api_client.rename_user("u2", "maria")
     assert exc_info.value.detail == detail
+
+
+def test_backend_url_default_points_to_vps():
+    """O padrao de BACKEND_URL e a API na VPS (nao mais o Render)."""
+    import importlib
+    import os
+
+    from app import config
+
+    saved = os.environ.pop("CONCURSO_FINDER_BACKEND_URL", None)
+    try:
+        importlib.reload(config)
+        assert config.BACKEND_URL == "https://api.iaprovale.augustusai.com.br"
+    finally:
+        if saved is not None:
+            os.environ["CONCURSO_FINDER_BACKEND_URL"] = saved
+        importlib.reload(config)

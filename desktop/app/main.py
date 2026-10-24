@@ -75,7 +75,7 @@ _ICON_PATH = _APP_DIR / "assets" / "icon.ico"
 class _ConnectingPage(QWidget):
     """Transient centered "Conectando ao servidor..." state shown while the
     startup auto-login validates the saved token (T-05) — avoids a blank
-    window during Render's cold-start wait. Uses lazy imports of qfluentwidgets
+    window while the saved token is validated. Uses lazy imports of qfluentwidgets
     widgets to keep them out of module import time.
     """
 
@@ -130,7 +130,7 @@ class _RootWindow(QWidget):
         self._session: auth_store.Session | None = None
         self._main_window: MainWindow | None = None
 
-        # Reconnect timer for startup auto-login: on a network/cold-start
+        # Reconnect timer for startup auto-login: on a network/network
         # failure the app stays on the "Conectando..." screen and retries,
         # only leaving it once actually connected (or on a real 401). Child of
         # this widget, so it is destroyed with the window (never fires late).
@@ -224,8 +224,8 @@ class _RootWindow(QWidget):
             return
 
         # Show a "connecting" state instead of a blank window while GET /profile
-        # validates the saved token — this can take 30-60s on a Render free-tier
-        # cold start (T-05), during which the window would otherwise be empty.
+        # validates the saved token — this is normally under 1s, but the window
+        # would otherwise be empty on a slow network (T-05).
         # The app STAYS on this screen until it actually connects (see
         # _on_startup_invalid) — it never shows login/main while disconnected.
         self._swap(_ConnectingPage())
@@ -244,7 +244,7 @@ class _RootWindow(QWidget):
 
     def _on_startup_invalid(self, exc) -> None:
         # A real 401 (SessionExpiredError) means the saved token is dead: clear
-        # it and fall back to login. A network/timeout/cold-start failure must
+        # it and fall back to login. A network/timeout/network failure must
         # NOT leave the "Conectando..." screen — keep retrying until the server
         # answers, so the app only leaves this screen once truly connected.
         if isinstance(exc, api_client.SessionExpiredError):
