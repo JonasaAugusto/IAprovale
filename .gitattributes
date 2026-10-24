@@ -1,0 +1,3 @@
+
+# Hook de pre-commit (gitleaks) roda em sh: sempre LF
+.githooks/* text eol=lf

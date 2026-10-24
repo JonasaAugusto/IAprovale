@@ -1,0 +1,89 @@
+# Configuracao unica de gitleaks para todos os repositorios da Augustus (SEG-02).
+# Copiada como `.gitleaks.toml` na raiz de cada repo por `instalar-hook` (mesmo arquivo, mesmas regras).
+# gitleaks v8.30.1. Regras padrao + as do nosso stack. Falso positivo: acrescente a uma [[allowlists]] daqui,
+# nunca desligue o hook.
+
+title = "Augustus AI Solutions"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "augustus-deepseek-key"
+description = "Chave da API DeepSeek"
+regex = '''\bsk-[a-f0-9]{32}\b'''
+keywords = ["sk-"]
+
+[[rules]]
+id = "augustus-huggingface-token"
+description = "Token do Hugging Face"
+regex = '''\bhf_[A-Za-z0-9]{30,}\b'''
+keywords = ["hf_"]
+
+[[rules]]
+id = "augustus-conector-token"
+description = "CONECTOR_TOKEN (48 hex) atribuido em arquivo"
+regex = '''(?i)(?:CONECTOR_TOKEN|BOTS_API_TOKEN)["']?\s*[:=]\s*["']?[a-f0-9]{48}\b'''
+keywords = ["conector_token", "bots_api_token"]
+
+[[rules]]
+id = "augustus-restic-b2"
+description = "Senha do restic ou chave do Backblaze B2"
+regex = '''(?i)(?:RESTIC_PASSWORD|B2_ACCOUNT_KEY|B2_APPLICATION_KEY|AWS_SECRET_ACCESS_KEY)["']?\s*[:=]\s*["']?[^\s"'<>$]{16,}'''
+keywords = ["restic_password", "b2_account_key", "b2_application_key", "aws_secret_access_key"]
+
+[[rules]]
+id = "augustus-dsn-com-senha"
+description = "URL de banco com senha embutida"
+regex = '''(?i)postgres(?:ql)?://[^:\s/@]+:[^@\s/]{6,}@[^\s/]+'''
+keywords = ["postgres"]
+  [[rules.allowlists]]
+  description = "Exemplos e placeholders"
+  regexTarget = "match"
+  regexes = ['''(?i):(?:senha|password|changeme|xxx+|\*+|<[^>]*>|\$\{?[A-Z_]+\}?)@''']
+
+[[rules]]
+id = "augustus-tokens-de-servico"
+description = "Tokens de servico em env (WhatsApp, Evolution, Mercado Pago)"
+regex = '''(?i)(?:WHATSAPP_TOKEN|EVOLUTION_API_KEY|MERCADOPAGO_ACCESS_TOKEN|MP_ACCESS_TOKEN)["']?\s*[:=]\s*["']?[A-Za-z0-9_-]{20,}'''
+keywords = ["whatsapp_token", "evolution_api_key", "mercadopago_access_token", "mp_access_token"]
+
+[[allowlists]]
+description = "Arquivos de exemplo, testes com segredos falsos e dependencias"
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)bots\.example\.toml$''',
+  '''(^|/)(node_modules|\.venv|dist|build|bin|obj)/''',
+  '''(^|/)package-lock\.json$''',
+  '''(^|/)uv\.lock$''',
+  '''(^|/)docs/seguranca/gitleaks/corpus/''',
+  # testes com valores falsos (revisados em 2026-10-24: so literais de teste)
+  '''Tests?\.cs$''',
+  '''(^|/)tests?/.*(test_|\.test\.)''',
+  '''(^|/)test_[^/]*\.py$''',
+  '''(^|/)conftest\.py$''',
+  '''\.test\.(ts|js|mjs)$''',
+  # codigo vendorizado (xterm.js minificado dispara generic-api-key por nomes como SequencerByKey)
+  '''/wwwroot/terminal/''',
+]
+
+[[allowlists]]
+description = "Falsos positivos revisados: citacao do nome de um script, exemplo de curl sem token"
+paths = [
+  '''\.planning/phases/09-acesso-remoto-por-api-e-microfone/09-VERIFICATION\.md$''',
+  '''(^|/)docs/projeto/03-fundamentos\.md$''',
+]
+
+[[allowlists]]
+description = "Falso positivo revisado (Raizes): comparacao de chave de regra no parser do catalogo, nao e segredo"
+regexTarget = "line"
+regexes = ['''regraKey\s*===''']
+
+[[allowlists]]
+description = "Fixtures e placeholders conhecidos e revisados (2026-10-24): senha de teste do Peter (SuperSecreta99), token de exemplo da documentacao do Conector, senha de mock do admin do iaprovale. A chave PEM falsa do Peter vive em tests/test_redact.py, coberta pela regra de paths acima."
+regexTarget = "line"
+regexes = [
+  '''SuperSecreta99''',
+  '''um-token-longo-e-aleatorio''',
+  '''MOCK_PASSWORD\s*=''',
+]

@@ -168,3 +168,16 @@ Requer `.env` com credenciais de uma conta de teste dedicada — veja `e2e/.env.
 Projeto em desenvolvimento ativo. Acesso restrito a convite.
 
 Licenciado sob [PolyForm Noncommercial 1.0.0](LICENSE) — uso não comercial permitido.
+
+## Hook de segredos (gitleaks)
+
+Todo commit passa por um pré-commit que roda o [gitleaks](https://github.com/gitleaks/gitleaks) (v8.30.1) no que foi adicionado e barra o commit se achar segredo. O hook é versionado em `.githooks/pre-commit` e a configuração, em `.gitleaks.toml` (a mesma para todos os projetos: regras padrão mais chaves DeepSeek, Hugging Face, tokens do Conector, restic/B2, URLs de banco com senha; fixtures de teste conhecidos ficam na allowlist).
+
+Ativar depois de clonar:
+
+```sh
+winget install gitleaks      # ou o binário do v8.30.1 em github.com/gitleaks/gitleaks/releases; ou GITLEAKS_BIN=<caminho>
+git config core.hooksPath .githooks
+```
+
+Sem o gitleaks instalado o commit é barrado de propósito. Falso positivo: acrescente a exceção em `.gitleaks.toml` e commite a mudança, nunca desligue o hook. Varredura do histórico inteiro: `gitleaks git --config=.gitleaks.toml --redact .`

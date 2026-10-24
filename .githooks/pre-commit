@@ -1,0 +1,33 @@
+#!/bin/sh
+# Hook de pre-commit da Augustus (SEG-02): barra o commit se o gitleaks achar segredo no que foi adicionado.
+# Versionado em .githooks/ e ligado por `git config core.hooksPath .githooks` (feito pelo instalar-hook.sh).
+# Nao ha como "pular sem querer": para um falso positivo, acrescente a excecao em .gitleaks.toml e commite a mudanca.
+
+CONFIG=".gitleaks.toml"
+[ -f "$CONFIG" ] || CONFIG="docs/seguranca/gitleaks/gitleaks.toml"
+
+BIN="${GITLEAKS_BIN:-}"
+if [ -z "$BIN" ]; then
+  for c in gitleaks gitleaks.exe "$HOME/bin/gitleaks" "$HOME/bin/gitleaks.exe" "$HOME/.local/bin/gitleaks"; do
+    if command -v "$c" >/dev/null 2>&1; then BIN="$c"; break; fi
+  done
+fi
+
+if [ -z "$BIN" ]; then
+  echo "pre-commit: gitleaks nao encontrado." >&2
+  echo "  Instale o v8.30.1 (winget install gitleaks, ou binario em https://github.com/gitleaks/gitleaks/releases)" >&2
+  echo "  ou aponte GITLEAKS_BIN para ele. O commit foi barrado de proposito: sem varredura nao ha commit." >&2
+  exit 1
+fi
+
+CFG_ARG=""
+[ -f "$CONFIG" ] && CFG_ARG="--config=$CONFIG"
+
+# shellcheck disable=SC2086
+if ! "$BIN" git --staged --redact --no-banner $CFG_ARG . >/dev/null 2>&1; then
+  echo "pre-commit: o gitleaks encontrou possivel segredo no que voce vai commitar (ou falhou):" >&2
+  "$BIN" git --staged --redact --no-banner $CFG_ARG . 2>&1 | tail -20 >&2
+  echo "Remova o segredo (e gire a chave se ela ja saiu da sua maquina). Falso positivo: ajuste .gitleaks.toml." >&2
+  exit 1
+fi
+exit 0
