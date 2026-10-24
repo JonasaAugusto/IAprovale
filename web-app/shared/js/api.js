@@ -1,7 +1,7 @@
 "use strict";
 
 window.cfApi = (function () {
-  var BASE_URL = "https://iaprovalebackend.onrender.com";
+  var BASE_URL = "https://api.iaprovale.augustusai.com.br";
   var DEFAULT_TIMEOUT_MS = 90000;
 
   function touchActivity() {
